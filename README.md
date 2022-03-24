@@ -10,7 +10,7 @@ To do this, you first need to install the `pycame` library on the system where H
 pip install -e git+https://github.com/Den901/ha_came.git@main#egg=pycame
 ```
 
-In this case, the text `{GITHUB_TOKEN}` is replaced with the value of the GitHub access token. For security reasons, I do not publish it here — the token will be transferred via mail.
+
 
 > **Note:** To upgrade an already installed package add option `--upgrade`, ie. `pip install --upgrade -e ...`
 
