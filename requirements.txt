@@ -1,0 +1,2 @@
+homeassistant>=2021.7
+git+https://{GITHUB_TOKEN}@github.com/lrzdeveloper/python-came-manager.git@main#egg=pycame
