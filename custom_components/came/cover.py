@@ -1,43 +1,62 @@
-"""Support for the CAME openings (covers) devices."""
+from typing import Optional
 
-from homeassistant.components.cover import CoverEntity
+from homeassistant.components.cover import (
+    CoverEntity,
+    DEVICE_CLASS_WINDOW,  # Sostituisci con la device class corretta per le aperture
+    SUPPORT_CLOSE,
+    SUPPORT_OPEN,
+    SUPPORT_SET_POSITION,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 
-class CameOpeningEntity(CoverEntity):
-    """CAME openings (covers) device entity."""
+from pycame.came_manager import CameManager
+from pycame.devices import CameDevice
 
-    def __init__(self, device):
-        """Initialize the cover entity."""
-        self._device = device  # Assuming you have a CameDevice instance
+from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
+from .entity import CameEntity
+from .your_opening_module import CameOpening, OPENING_STATE_OPEN, OPENING_STATE_CLOSED
+
+class CameOpeningEntity(CameEntity, CoverEntity):
+    """CAME opening device entity."""
+
+    def __init__(self, device: CameOpening):
+        """Init CAME opening device entity."""
+        super().__init__(device)
 
     @property
-    def name(self):
-        """Return the name of the cover."""
-        return self._device.name
-
-    @property
-    def is_closed(self):
-        """Return if the cover is closed."""
-        return self._device.is_closed  # Implement this based on your device's logic
-
-    @property
-    def current_cover_position(self):
+    def current_cover_position(self) -> Optional[int]:
         """Return the current position of the cover."""
-        return self._device.current_cover_position  # Implement this based on your device's logic
-
-    async def async_open_cover(self, **kwargs):
-        """Open the cover."""
-        await self._device.open_cover()  # Implement this based on your device's logic
-
-    async def async_close_cover(self, **kwargs):
-        """Close the cover."""
-        await self._device.close_cover()  # Implement this based on your device's logic
-
-    async def async_set_cover_position(self, **kwargs):
-        """Move the cover to a specific position."""
-        position = kwargs.get('position')
-        await self._device.set_cover_position(position)  # Implement this based on your device's logic
+        return 100 if self._device.opening_state == OPENING_STATE_OPEN else 0
 
     @property
-    def supported_features(self):
-        """Return the supported features of the cover."""
-        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_SET_POSITION  # Adjust based on your device's capabilities
+    def is_opening(self) -> bool:
+        """Return if the cover is opening."""
+        return self._device.opening_state == OPENING_STATE_OPEN
+
+    @property
+    def is_closing(self) -> bool:
+        """Return if the cover is closing."""
+        return self._device.opening_state == OPENING_STATE_CLOSED
+
+    def open_cover(self, **kwargs) -> None:
+        """Open the cover."""
+        self._device.open()
+
+    def close_cover(self, **kwargs) -> None:
+        """Close the cover."""
+        self._device.close()
+
+    def set_cover_position(self, **kwargs) -> None:
+        """Move the cover to a specific position."""
+        position = kwargs.get("position")
+        if position is None:
+            return
+        if position == 0:
+            self.close_cover()
+        elif position == 100:
+            self.open_cover()
+
+    async def async_update(self):
+        """Update device state."""
+        await self._device.update()
