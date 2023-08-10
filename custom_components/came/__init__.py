@@ -15,6 +15,7 @@ import voluptuous as vol
 from homeassistant.components.climate import DOMAIN as CLIMATE
 from homeassistant.components.light import DOMAIN as LIGHT
 from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.cover import DOMAIN as COVER
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     CONF_ENTITIES,
@@ -64,6 +65,7 @@ CAME_TYPE_TO_HA = {
     "Light": LIGHT,
     "Thermostat": CLIMATE,
     "Analog Sensor": SENSOR,
+    "opening": COVER,
 }
 
 
