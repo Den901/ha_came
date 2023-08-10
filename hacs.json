@@ -5,7 +5,8 @@
         "binary_sensor",
         "sensor",
         "light",
-        "cover"
+        "cover",
+        "climate"
     ],
     "iot_class": "Cloud Polling",
     "homeassistant": "0.118"
