@@ -8,5 +8,5 @@
         "cover"
     ],
     "iot_class": "Cloud Polling",
-    "homeassistant": "0.118.0"
+    "homeassistant": "0.118"
 }
