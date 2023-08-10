@@ -7,8 +7,7 @@
 [![License][license-shield]][license]
 
 [![hacs][hacs-shield]][hacs]
-[![Project Maintenance][maintenance-shield]][user_profile]
-[![Support me on Patreon][patreon-shield]][patreon]
+[![Project Maintenance][maintenance-shield]][Den901]
 
 [![Community Forum][forum-shield]][forum]
 
@@ -60,15 +59,14 @@ I put a lot of work into making this repo and component available and updated to
 
 ***
 
-[component]: https://github.com/Limych/ha-blueprint
-[commits-shield]: https://img.shields.io/github/commit-activity/y/Limych/ha-blueprint.svg?style=popout
-[commits]: https://github.com/Limych/ha-blueprint/commits/master
+[component]: https://github.com/Den901/ha_came
+[commits]: https://github.com/Den901/ha_came/commits/master
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
-[exampleimg]: came-logo.png
+[came-logo]: came-logo.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/
-[license]: https://github.com/Limych/ha-blueprint/blob/main/LICENSE.md
+[license]: https://github.com/Den901/ha_came/LICENSE.md
 [license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout
 [user_profile]: https://github.com/Den901
 
