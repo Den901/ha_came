@@ -12,27 +12,25 @@
 
 [![Community Forum][forum-shield]][forum]
 
-_Component to integrate with [integration_blueprint][component]._
+_Component to integrate with the pycame library._
 
 **This component will set up the following platforms.**
 
 Platform | Description
 -- | --
-`binary_sensor` | Show something `True` or `False`.
-`sensor` | Show info from API.
-`switch` | Switch something `True` or `False`.
+`binary_sensor` | Show sensors status`.
+`climate` | Show and manage thermo zones.
+`light` | show and manage the light entities.
+`cover` | show and manage the covers.
 
 ![example][exampleimg]
 
 ## Features:
 
-- Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
-- Phasellus blandit massa non tellus:
-    - Pellentesque blandit. Etiam sapien.
-    - Quisque sed massa ac tortor accumsan bibendum.
-    - Donec et orci quis mi sollicitudin consectetuer.
-- Donec malesuada. Pellentesque bibendum pellentesque elit.
-- Morbi et diam ac wisi auctor fringilla.
+- Control lights, dimmer lights, RGB lights
+- Manage analog sensors
+- Manage climate entity
+- manage openings
 
 {% if not installed %}
 ## Installation
