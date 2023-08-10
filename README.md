@@ -31,7 +31,7 @@ After that read below how to configure `came` component.
 
 _The `came` integration is the main integration to integrate CAME related platforms._
 
-![example][exampleimg]
+
 
 ## Installation
 
