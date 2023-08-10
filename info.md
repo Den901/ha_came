@@ -72,13 +72,6 @@ I put a lot of work into making this repo and component available and updated to
 [forum]: https://community.home-assistant.io/
 [license]: https://github.com/Limych/ha-blueprint/blob/main/LICENSE.md
 [license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout
-[maintenance-shield]: https://img.shields.io/badge/maintainer-Andrey%20Khrolenok%20%40Limych-blue.svg?style=popout
-[releases-shield]: https://img.shields.io/github/release/Limych/ha-blueprint.svg?style=popout
-[releases]: https://github.com/Limych/ha-blueprint/releases
-[releases-latest]: https://github.com/Limych/ha-blueprint/releases/latest
-[user_profile]: https://github.com/Limych
-[report_bug]: https://github.com/Limych/ha-blueprint/issues/new?template=bug_report.md
-[suggest_idea]: https://github.com/Limych/ha-blueprint/issues/new?template=feature_request.md
-[contributors]: https://github.com/Limych/ha-blueprint/graphs/contributors
-[patreon-shield]: https://img.shields.io/endpoint.svg?url=https%3A%2F%2Fshieldsio-patreon.vercel.app%2Fapi%3Fusername%3DLimych%26type%3Dpatrons&style=popout
-[patreon]: https://www.patreon.com/join/limych
+[user_profile]: https://github.com/Den901
+
+
