@@ -23,7 +23,7 @@ Platform | Description
 `light` | show and manage the light entities.
 `cover` | show and manage the covers.
 
-![example][exampleimg]
+![came-logo][came-logo]
 
 ## Features:
 
@@ -65,7 +65,7 @@ I put a lot of work into making this repo and component available and updated to
 [commits]: https://github.com/Limych/ha-blueprint/commits/master
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
-[exampleimg]: example.png
+[exampleimg]: came-logo.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/
 [license]: https://github.com/Limych/ha-blueprint/blob/main/LICENSE.md
