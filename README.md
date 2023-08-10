@@ -7,7 +7,7 @@ Due to the fact that the `pycame` library and this integration are not published
 To do this, you first need to install the `pycame` library on the system where Home Assistant is installed (_if it is installed inside a docker container or inside a virtual machine, the library MUST also be installed there_):
 
 ```bash
-pip install -e git+https://github.com/Den901/ha_came.git@main#egg=pycame
+pip install -e git+https://github.com/Den901/ha_came.git@main#egg=pycame #or the place when you have the pycame library... :)
 ```
 
 
