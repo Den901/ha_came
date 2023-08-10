@@ -4,7 +4,8 @@
     "domains": [
         "binary_sensor",
         "sensor",
-        "switch"
+        "light",
+        "cover"
     ],
     "iot_class": "Cloud Polling",
     "homeassistant": "0.118.0"
