@@ -1,0 +1,22 @@
+{
+    "config": {
+        "abort": {
+            "single_instance_allowed": "Допускается только один экземпляр."
+        },
+        "step": {
+            "user": {
+                "title": "Интеграция CAME ETI/Domo",
+                "description": "Если вам нужна помощь с настройкой, посмотрите здесь: https://github.com/lrzdeveloper/ha-came",
+                "data": {
+                    "host": "IP-адрес хоста",
+                    "username": "Имя пользователя",
+                    "password": "Пароль",
+                    "token": "Токен доступа"
+                }
+            }
+        },
+        "error": {
+            "auth": "Адрес хоста, имя пользователя, пароль или токен — неверны."
+        }
+    }
+}
