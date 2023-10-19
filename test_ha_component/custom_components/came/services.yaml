@@ -1,0 +1,7 @@
+# Describes the format for available CAME services
+
+pull_devices:
+  description: Force pull device list from CAME server.
+
+force_update:
+  description: Force all CAME devices to pull data.
