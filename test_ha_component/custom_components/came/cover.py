@@ -1,4 +1,4 @@
-"""Support for the CAME lights."""
+"""Support for the CAME covers."""
 import logging
 from typing import List
 
