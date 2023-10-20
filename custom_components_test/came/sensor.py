@@ -21,7 +21,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import StateType
-from homeassistant.util.unit_system import PRESSURE_UNITS, TEMPERATURE_UNITS, ENERGY_UNITS #da vedere
+from homeassistant.util.unit_system import PRESSURE_UNITS, TEMPERATURE_UNITS
 from pycame.came_manager import CameManager
 from pycame.devices import CameDevice
 
