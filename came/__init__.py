@@ -16,6 +16,7 @@ from homeassistant.components.climate import DOMAIN as CLIMATE
 from homeassistant.components.light import DOMAIN as LIGHT
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.components.switch import DOMAIN as SWITCH
+from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import (
     CONF_ENTITIES,
@@ -66,6 +67,7 @@ CAME_TYPE_TO_HA = {
     "Thermostat": CLIMATE,
     "Analog Sensor": SENSOR,
     "Generic relay": SWITCH,
+    "Digital input": BINARY_SENSOR,
 }
 
 
