@@ -13,6 +13,7 @@ from typing import List
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.climate import DOMAIN as CLIMATE
+from homeassistant.components.cover import DOMAIN as COVER #NEW ADD!
 from homeassistant.components.light import DOMAIN as LIGHT
 from homeassistant.components.sensor import DOMAIN as SENSOR
 from homeassistant.components.switch import DOMAIN as SWITCH
@@ -68,6 +69,7 @@ CAME_TYPE_TO_HA = {
     "Analog Sensor": SENSOR,
     "Generic relay": SWITCH,
     "Digital input": BINARY_SENSOR,
+    "Opening": COVER, #NEW ENTRY!
 }
 
 
