@@ -1,6 +1,5 @@
 """Support for the CAME lights."""
 
-
 import logging
 from typing import List
 from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
@@ -9,10 +8,16 @@ from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
     COLOR_MODE_BRIGHTNESS,
-    COLOR_MODE_HS,
-    ATTR_BRIGHTNESS,
-    ATTR_HS_COLOR
+    COLOR_MODE_HS
 )
+from homeassistant.helpers.entity import ENTITY_ID_FORMAT
+from pycame.devices import CameDevice
+from pycame.devices.came_light import LIGHT_STATE_ON
+
+from .entity import CameEntity  # Assicurati che questo venga importato correttamente
+from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
+
+_LOGGER = logging.getLogger(__name__)
 
 class CameLightEntity(CameEntity, LightEntity):
     """CAME light device entity."""
