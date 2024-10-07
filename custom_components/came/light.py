@@ -56,7 +56,7 @@ def _setup_entities(hass, dev_ids: List[str]):
     return entities
 
 
-class CameLightEntity(CameEntity, LightEntityFeature):
+class CameLightEntity(CameEntity, LightEntity):
     """CAME light device entity."""
 
     def __init__(self, device: CameDevice):
