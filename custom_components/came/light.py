@@ -1,25 +1,62 @@
 """Support for the CAME lights."""
-
 import logging
 from typing import List
+
 from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light import (
-    LightEntity,
+    ENTITY_ID_FORMAT,
+    SUPPORT_BRIGHTNESS,
+    SUPPORT_COLOR,
     LightEntityFeature,
-    COLOR_MODE_BRIGHTNESS,
-    COLOR_MODE_HS
 )
-from homeassistant.helpers.entity import ENTITY_ID_FORMAT
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from pycame.came_manager import CameManager
 from pycame.devices import CameDevice
 from pycame.devices.came_light import LIGHT_STATE_ON
 
-from .entity import CameEntity  # Assicurati che questo venga importato correttamente
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
+from .entity import CameEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-class CameLightEntity(CameEntity, LightEntity):
+
+async def async_setup_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
+):
+    """Set up CAME light devices dynamically through discovery."""
+
+    async def async_discover_sensor(dev_ids):
+        """Discover and add a discovered CAME light devices."""
+        if not dev_ids:
+            return
+
+        entities = await hass.async_add_executor_job(_setup_entities, hass, dev_ids)
+        async_add_entities(entities)
+
+    async_dispatcher_connect(
+        hass, SIGNAL_DISCOVERY_NEW.format(LIGHT_DOMAIN), async_discover_sensor
+    )
+
+    devices_ids = hass.data[DOMAIN][CONF_PENDING].pop(LIGHT_DOMAIN, [])
+    await async_discover_sensor(devices_ids)
+
+
+def _setup_entities(hass, dev_ids: List[str]):
+    """Set up CAME light device."""
+    manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
+    entities = []
+    for dev_id in dev_ids:
+        device = manager.get_device_by_id(dev_id)
+        if device is None:
+            continue
+        entities.append(CameLightEntity(device))
+    return entities
+
+
+class CameLightEntity(CameEntity, LightEntityFeature):
     """CAME light device entity."""
 
     def __init__(self, device: CameDevice):
@@ -27,30 +64,9 @@ class CameLightEntity(CameEntity, LightEntity):
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
 
-        self._attr_supported_features = 0
-        if self._device.support_brightness:
-            self._attr_supported_features |= LightEntityFeature.BRIGHTNESS
-        if self._device.support_color:
-            self._attr_supported_features |= LightEntityFeature.COLOR
-
-    @property
-    def supported_color_modes(self):
-        """Return the supported color modes."""
-        modes = set()
-        if self._device.support_brightness:
-            modes.add(COLOR_MODE_BRIGHTNESS)
-        if self._device.support_color:
-            modes.add(COLOR_MODE_HS)
-        return modes
-
-    @property
-    def color_mode(self):
-        """Return the current color mode."""
-        if self._device.support_color:
-            return COLOR_MODE_HS
-        if self._device.support_brightness:
-            return COLOR_MODE_BRIGHTNESS
-        return None
+        self._attr_supported_features = (
+            SUPPORT_BRIGHTNESS if self._device.support_brightness else 0
+        ) | (SUPPORT_COLOR if self._device.support_color else 0)
 
     @property
     def is_on(self):
