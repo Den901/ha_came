@@ -6,9 +6,9 @@ from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light import (
     ENTITY_ID_FORMAT,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    LightEntityFeature,
+    #SUPPORT_BRIGHTNESS,
+    #SUPPORT_COLOR,
+    LightEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
