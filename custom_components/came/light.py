@@ -1,3 +1,9 @@
+"""Support for the CAME lights."""
+import logging
+from typing import List
+
+
+
 from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
