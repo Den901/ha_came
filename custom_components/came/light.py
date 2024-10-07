@@ -1,9 +1,10 @@
 """Support for the CAME lights."""
+
+
 import logging
 from typing import List
-
-
-
+from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
+from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light import (
     LightEntity,
     LightEntityFeature,
