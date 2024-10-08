@@ -7,7 +7,8 @@
   "dependencies": [],
   "config_flow": true,
   "codeowners": [
-    "@Limych"
+    "@Limych",
+    "@Den901"
   ],
   "requirements": [
     "pycame"
