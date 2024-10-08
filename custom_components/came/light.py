@@ -6,8 +6,13 @@ from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light import (
     ENTITY_ID_FORMAT,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
+    # SUPPORT_BRIGHTNESS,  # Deprecato, sostituito dai color modes
+    # SUPPORT_COLOR,  # Deprecato, sostituito dai color modes
+    ATTR_BRIGHTNESS,
+    ATTR_HS_COLOR,
+    ATTR_COLOR_MODE,  # Nuovo attributo per il color mode
+    ATTR_SUPPORTED_COLOR_MODES,  # Nuovo attributo per i color modes supportati
+    ColorMode,  # Nuova classe per la gestione dei color modes
     LightEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -29,7 +34,7 @@ async def async_setup_entry(
     """Set up CAME light devices dynamically through discovery."""
 
     async def async_discover_sensor(dev_ids):
-        """Discover and add a discovered CAME light devices."""
+        """Discover and add discovered CAME light devices."""
         if not dev_ids:
             return
 
@@ -64,9 +69,19 @@ class CameLightEntity(CameEntity, LightEntity):
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
 
-        self._attr_supported_features = (
-            SUPPORT_BRIGHTNESS if self._device.support_brightness else 0
-        ) | (SUPPORT_COLOR if self._device.support_color else 0)
+        # Imposta i color modes invece di usare i support features deprecati
+        self._attr_supported_color_modes = set()
+
+        if self._device.support_brightness:
+            self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
+        
+        if self._device.support_color:
+            self._attr_supported_color_modes.add(ColorMode.HS)
+
+        # Vecchio modo commentato
+        # self._attr_supported_features = (
+        #     SUPPORT_BRIGHTNESS if self._device.support_brightness else 0
+        # ) | (SUPPORT_COLOR if self._device.support_color else 0)
 
     @property
     def is_on(self):
