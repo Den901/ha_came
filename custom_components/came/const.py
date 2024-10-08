@@ -11,7 +11,7 @@ https://github.com/Den901/ha-came
 # Base component constants
 NAME = "CAME ETI/Domo"
 DOMAIN = "came"
-VERSION = "1.1 - beta"
+VERSION = "1.0.0 - stable"
 ATTRIBUTION = "Data provided by CAME ETI/Domo"
 ISSUE_URL = "https://github.com/Den901/ha-came/issues"
 DATA_YAML = f"{DOMAIN}__yaml"
