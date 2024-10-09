@@ -2,17 +2,14 @@
 import logging
 from typing import List
 
-from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
-from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light import (
-    ENTITY_ID_FORMAT,
-    # SUPPORT_BRIGHTNESS,  # Deprecato, sostituito dai color modes
-    # SUPPORT_COLOR,  # Deprecato, sostituito dai color modes
     ATTR_BRIGHTNESS,
     ATTR_HS_COLOR,
-    ATTR_COLOR_MODE,  # Nuovo attributo per il color mode
-    ATTR_SUPPORTED_COLOR_MODES,  # Nuovo attributo per i color modes supportati
-    ColorMode,  # Nuova classe per la gestione dei color modes
+    DOMAIN as LIGHT_DOMAIN,
+    ENTITY_ID_FORMAT,
+    ATTR_COLOR_MODE,
+    ATTR_SUPPORTED_COLOR_MODES,
+    ColorMode,
     LightEntity,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -78,10 +75,9 @@ class CameLightEntity(CameEntity, LightEntity):
         if self._device.support_color:
             self._attr_supported_color_modes.add(ColorMode.HS)
 
-        # Vecchio modo commentato
-        # self._attr_supported_features = (
-        #     SUPPORT_BRIGHTNESS if self._device.support_brightness else 0
-        # ) | (SUPPORT_COLOR if self._device.support_color else 0)
+        # Imposta un color mode di default se nessuno è supportato
+        if not self._attr_supported_color_modes:
+            self._attr_supported_color_modes.add(ColorMode.ONOFF)
 
     @property
     def is_on(self):
