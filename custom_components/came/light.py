@@ -1,14 +1,11 @@
 """Support for the CAME lights."""
 import logging
-from typing import List
+from typing import List, Optional
 
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_HS_COLOR,
     DOMAIN as LIGHT_DOMAIN,
-    ENTITY_ID_FORMAT,
-    ATTR_COLOR_MODE,
-    ATTR_SUPPORTED_COLOR_MODES,
     ColorMode,
     LightEntity,
 )
@@ -24,12 +21,13 @@ from .entity import CameEntity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Definisci l'ENTITY_ID_FORMAT qui
+ENTITY_ID_FORMAT = "light.came_{}"
 
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ):
     """Set up CAME light devices dynamically through discovery."""
-
     async def async_discover_sensor(dev_ids):
         """Discover and add discovered CAME light devices."""
         if not dev_ids:
@@ -45,7 +43,6 @@ async def async_setup_entry(
     devices_ids = hass.data[DOMAIN][CONF_PENDING].pop(LIGHT_DOMAIN, [])
     await async_discover_sensor(devices_ids)
 
-
 def _setup_entities(hass, dev_ids: List[str]):
     """Set up CAME light device."""
     manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
@@ -57,7 +54,6 @@ def _setup_entities(hass, dev_ids: List[str]):
         entities.append(CameLightEntity(device))
     return entities
 
-
 class CameLightEntity(CameEntity, LightEntity):
     """CAME light device entity."""
 
@@ -66,18 +62,25 @@ class CameLightEntity(CameEntity, LightEntity):
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
 
-        # Imposta i color modes invece di usare i support features deprecati
+        # Imposta i color modes
         self._attr_supported_color_modes = set()
+        self._attr_color_mode: Optional[ColorMode] = None
 
+        # Controlla se il dispositivo supporta la luminosità
         if self._device.support_brightness:
             self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)
-        
+
+        # Controlla se il dispositivo supporta il colore
         if self._device.support_color:
             self._attr_supported_color_modes.add(ColorMode.HS)
+            self._attr_color_mode = ColorMode.HS
+        else:
+            # Se non supporta il colore, imposta un modo di default
+            self._attr_color_mode = ColorMode.BRIGHTNESS
 
-        # Imposta un color mode di default se nessuno è supportato
+        # Se non ci sono color modes supportati, imposta un modo predefinito
         if not self._attr_supported_color_modes:
-            self._attr_supported_color_modes.add(ColorMode.ONOFF)
+            self._attr_supported_color_modes.add(ColorMode.BRIGHTNESS)  # Assicurati di avere un modo valido
 
     @property
     def is_on(self):
@@ -113,3 +116,8 @@ class CameLightEntity(CameEntity, LightEntity):
         if not self._device.support_color:
             return None
         return tuple(self._device.hs_color)
+
+    @property
+    def color_mode(self) -> Optional[ColorMode]:
+        """Return the color mode of the light."""
+        return self._attr_color_mode
