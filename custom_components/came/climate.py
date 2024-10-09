@@ -5,7 +5,7 @@ from typing import Optional
 from homeassistant.components.climate import DOMAIN as CLIMATE_DOMAIN
 from homeassistant.components.climate import (
     ENTITY_ID_FORMAT,
-    HVACMode,  # Sostituisce le vecchie costanti HVAC_MODE_*
+    HVACMode,  # Nuovo: sostituisce le vecchie costanti HVAC_MODE_*
     ClimateEntity,
     ClimateEntityFeature,  # Per sostituire SUPPORT_* vecchie costanti
 )
@@ -95,16 +95,13 @@ class CameClimateEntity(CameEntity, ClimateEntity):
 
         # Modificato: Sostituite le vecchie costanti SUPPORT_* con ClimateEntityFeature.*
         self._attr_supported_features = (
-            (
-                ClimateEntityFeature.TARGET_TEMPERATURE  # Sostituisce SUPPORT_TARGET_TEMPERATURE
-                if self._device.support_target_temperature
-                else 0
-            )
-            | (ClimateEntityFeature.TARGET_HUMIDITY  # Sostituisce SUPPORT_TARGET_HUMIDITY
-               if self._device.support_target_humidity else 0)
-            | (ClimateEntityFeature.FAN_MODE  # Sostituisce SUPPORT_FAN_MODE
-               if self._device.support_fan_speed else 0)
+            (ClimateEntityFeature.TARGET_TEMPERATURE if self._device.support_target_temperature else 0) |
+            (ClimateEntityFeature.TARGET_HUMIDITY if self._device.support_target_humidity else 0) |
+            (ClimateEntityFeature.FAN_MODE if self._device.support_fan_speed else 0) |
+            ClimateEntityFeature.TURN_ON |
+            ClimateEntityFeature.TURN_OFF  # Aggiunta per turn_on/turn_off
         )
+
         # Modificato: Sostituito PRECISION_TENTHS con il nuovo attributo
         self._attr_target_temperature_step = PRECISION_TENTHS
         # Modificato: Sostituito TEMP_CELSIUS con UnitOfTemperature.CELSIUS
@@ -129,24 +126,19 @@ class CameClimateEntity(CameEntity, ClimateEntity):
     def hvac_mode(self):
         """Return current operation ie. heat, cool, idle."""
         if not self._device.state:
-            # Modificato: Sostituito HVAC_MODE_OFF con HVACMode.OFF
-            return HVACMode.OFF
-        # else State = ON
+            return HVACMode.OFF  # Modificato: Sostituito HVAC_MODE_OFF con HVACMode.OFF
 
         if self._device.mode in CAME_MODE_TO_HA:
             return CAME_MODE_TO_HA[self._device.mode]
-        # else Mode = Manual
 
         if self._device.dehumidifier_state == THERMO_DEHUMIDIFIER_ON:
-            # Modificato: Sostituito HVAC_MODE_DRY con HVACMode.DRY
-            return HVACMode.DRY
+            return HVACMode.DRY  # Modificato: Sostituito HVAC_MODE_DRY con HVACMode.DRY
 
         return CAME_SEASON_TO_HA[self._device.season]
 
     @property
     def hvac_modes(self):
         """Return the list of available operation modes."""
-        # Modificato: Sostituite le vecchie costanti HVAC_MODE_* con HVACMode.*
         operations = [
             HVACMode.OFF,  # Sostituisce HVAC_MODE_OFF
             HVACMode.AUTO,  # Sostituisce HVAC_MODE_AUTO
@@ -154,8 +146,7 @@ class CameClimateEntity(CameEntity, ClimateEntity):
             HVACMode.COOL,  # Sostituisce HVAC_MODE_COOL
         ]
         if self._device.support_target_humidity:
-            # Modificato: Sostituito HVAC_MODE_DRY con HVACMode.DRY
-            operations.append(HVACMode.DRY)
+            operations.append(HVACMode.DRY)  # Modificato: Sostituito HVAC_MODE_DRY con HVACMode.DRY
         return operations
 
     def set_temperature(self, **kwargs) -> None:
@@ -165,21 +156,13 @@ class CameClimateEntity(CameEntity, ClimateEntity):
 
     def set_hvac_mode(self, hvac_mode: str) -> None:
         """Set new target hvac mode."""
-        # Modificato: Sostituito HVAC_MODE_* con HVACMode.*
         if hvac_mode == HVACMode.OFF:  # Sostituisce HVAC_MODE_OFF
             self._device.zone_config(mode=THERMO_MODE_OFF)
-
         elif hvac_mode == HVACMode.HEAT:  # Sostituisce HVAC_MODE_HEAT
-            self._device.zone_config(
-                mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_WINTER
-            )
+            self._device.zone_config(mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_WINTER)
         elif hvac_mode == HVACMode.COOL:  # Sostituisce HVAC_MODE_COOL
-            self._device.zone_config(
-                mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_SUMMER
-            )
+            self._device.zone_config(mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_SUMMER)
         # pylint: disable=fixme
         # todo: Set up dehumidifier when hvac_mode == HVACMode.DRY
-
         else:
-            # Modificato: Sostituito HVAC_MODE_AUTO con HVACMode.AUTO
-            self._device.zone_config(mode=THERMO_MODE_AUTO)
+            self._device.zone_config(mode=THERMO_MODE_AUTO)  # Modificato: Sostituito HVAC_MODE_AUTO con HVACMode.AUTO
