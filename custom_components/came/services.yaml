@@ -5,3 +5,18 @@ pull_devices:
 
 force_update:
   description: Force all CAME devices to pull data.
+
+  # creazione scenari
+create_scenario:
+  description: Crea un nuovo scenario.
+  fields:
+    name:
+      description: Nome dello scenario.
+      example: "Scenario Cinema"
+
+delete_scenario:
+  description: Elimina uno scenario esistente.
+  fields:
+    scenario_id:
+      description: ID dello scenario da eliminare.
+      example: 5
