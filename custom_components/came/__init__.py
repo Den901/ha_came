@@ -225,3 +225,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         thread.join()
 
     return unload_ok
+#scenari
+async def async_setup_services(hass):
+    """Configura i servizi personalizzati."""
+    manager = hass.data[DOMAIN][CONF_MANAGER]
+
+    async def create_scenario(call):
+        await hass.async_add_executor_job(
+            manager.create_scenario, call.data["name"]
+        )
+
+    async def delete_scenario(call):
+        await hass.async_add_executor_job(
+            manager.delete_scenario, call.data["scenario_id"]
+        )
+
+    hass.services.async_register(DOMAIN, "create_scenario", create_scenario)
+    hass.services.async_register(DOMAIN, "delete_scenario", delete_scenario)
