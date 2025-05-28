@@ -2,6 +2,10 @@
 
 # Note: Beta version installation
 
+
+https://github.com/Den901/ha_came
+
+<p style="display:none;">
 <s>
 Due to the fact that the `pycame` library and this integration are not published, automatic component installation is not available. You will have to install them manually.
 
@@ -18,6 +22,7 @@ pip install -e git+https://github.com/Den901/ha_came.git@main#egg=pycame #or the
 After installing the library, copy _all_ files from directory `custom_components/came` in this repository to the same directory in your Home Assistant configs.
 After that read below how to configure `came` component.
 </s>
+</p>
 ***
 
 # CAME integration component
