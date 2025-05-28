@@ -3,8 +3,6 @@
 # Note: Beta version installation
 
 
-Add the repo https://github.com/Den901/ha_came to your HACS sources
-
 
 ***
 
@@ -29,8 +27,9 @@ _The `came` integration is the main integration to integrate CAME related platfo
 ### Install from HACS (recommended)
 
 1. Have [HACS][hacs] installed, this will allow you to easily manage and track updates.
-1. Search for "CAME".
-1. Click Install below the found integration.
+2. Add the repo https://github.com/Den901/ha_came to your HACS sources
+3. Search for "CAME".
+4. Click Install below the found integration.
 1. _If you want to configure component via Home Assistant UI..._\
     in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "CAME".
 1. _If you want to configure component via `configuration.yaml`..._\
