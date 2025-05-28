@@ -47,6 +47,8 @@ _The `came` integration is the main integration to integrate CAME related platfo
     in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "CAME".
 1. _If you want to configure component via `configuration.yaml`..._\
     follow instructions below, then restart Home Assistant.
+
+   note: pycame library is now integrated in the component
 >
 
 ### Manual installation
@@ -138,19 +140,19 @@ See separate [license file](LICENSE.md) for full text.
 
 ***
 
-[component]: https://github.com/lrzdeveloper/ha-came
-[commits-shield]: https://img.shields.io/github/commit-activity/y/lrzdeveloper/ha-came.svg?style=popout
-[commits]: https://github.com/lrzdeveloper/ha-came/commits/master
+[component]: https://github.com/den901/ha-came
+[commits-shield]: https://img.shields.io/github/commit-activity/y/den901/ha-came.svg?style=popout
+[commits]: https://github.com/den901/ha-came/commits/master
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
 [exampleimg]: example.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/
-[license]: https://github.com/lrzdeveloper/ha-came/blob/main/LICENSE.md
+[license]: https://github.com/den901/ha-came/blob/main/LICENSE.md
 [license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout
 [releases-shield]: https://img.shields.io/github/release/lrzdeveloper/ha-came.svg?style=popout
-[releases]: https://github.com/lrzdeveloper/ha-came/releases
-[releases-latest]: https://github.com/lrzdeveloper/ha-came/releases/latest
-[report_bug]: https://github.com/lrzdeveloper/ha-came/issues/new?template=bug_report.md
-[suggest_idea]: https://github.com/lrzdeveloper/ha-came/issues/new?template=feature_request.md
-[contributors]: https://github.com/lrzdeveloper/ha-came/graphs/contributors
+[releases]: https://github.com/den901/ha-came/releases
+[releases-latest]: https://github.com/den901/ha-came/releases/latest
+[report_bug]: https://github.com/den901/ha-came/issues/new?template=bug_report.md
+[suggest_idea]: https://github.com/den901/ha-came/issues/new?template=feature_request.md
+[contributors]: https://github.com/den901/ha-came/graphs/contributors
