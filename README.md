@@ -1,8 +1,5 @@
 *Please :star: this repo if you find it useful*
 
-# Note: Beta version installation
-
-
 
 ***
 
