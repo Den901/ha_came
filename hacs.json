@@ -1,13 +1,22 @@
+#{
+ #   "name": "CAME ETI/Domo",
+  #  "hacs": "1.6.0",
+   # "domains": [
+    #    "binary_sensor",
+     #   "sensor",
+      #  "light",
+       # "cover",
+        #"climate"
+    #],
+    #"iot_class": "Cloud Polling",
+    #"homeassistant": "0.118"
+#}
 {
-    "name": "CAME ETI/Domo",
-    "hacs": "1.6.0",
-    "domains": [
-        "binary_sensor",
-        "sensor",
-        "light",
-        "cover",
-        "climate"
-    ],
-    "iot_class": "Cloud Polling",
-    "homeassistant": "0.118"
+  "name": "CAME Integration",
+  "domain": "came",
+  "documentation": "https://github.com/Den901/ha_came",
+  "codeowners": ["@Den901"],
+  "version": "1.0.0",
+  "requirements": [],
+  "iot_class": "local_push"
 }
