@@ -35,7 +35,7 @@ _The `came` integration is the main integration to integrate CAME related platfo
 
 ## Installation
 
-<strike>
+
 
 ### Install from HACS (recommended)
 
@@ -46,7 +46,7 @@ _The `came` integration is the main integration to integrate CAME related platfo
     in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "CAME".
 1. _If you want to configure component via `configuration.yaml`..._\
     follow instructions below, then restart Home Assistant.
-</strike>
+>
 
 ### Manual installation
 
