@@ -71,7 +71,7 @@ came:
   host: YOUR_CAME_HOST
   username: YOUR_EMAIL
   password: YOUR_PASSWORD
-  token: YOUR_TOKEN
+  token: RANDOM_STRING
 ```
 
 ## Configuration variables
