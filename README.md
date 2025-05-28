@@ -17,7 +17,7 @@ pip install -e git+https://github.com/Den901/ha_came.git@main#egg=pycame #or the
 
 After installing the library, copy _all_ files from directory `custom_components/came` in this repository to the same directory in your Home Assistant configs.
 After that read below how to configure `came` component.
-<\string>
+</string>
 ***
 
 # CAME integration component
