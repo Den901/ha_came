@@ -1,14 +1,6 @@
 *Please :star: this repo if you find it useful*
 
-## Support Me
 
-If you appreciate my work and want to buy me a beer, you can donate via PayPal:
-
-
-
-[![Buy me a beer](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?business=GTYL35E47Y2AN&amount=5&currency_code=EUR)
-
-Buy me a beer...🍺🍺🍺🍺🍺🍺
 
 ![Esempio di Immagine](Came.png)
 ***
@@ -150,3 +142,14 @@ See separate [license file](LICENSE.md) for full text.
 [report_bug]: https://github.com/den901/ha-came/issues/new?template=bug_report.md
 [suggest_idea]: https://github.com/den901/ha-came/issues/new?template=feature_request.md
 [contributors]: https://github.com/den901/ha-came/graphs/contributors
+
+
+## Support Me
+
+If you appreciate my work and want to buy me a beer, you can donate via PayPal:
+
+
+
+[![Buy me a beer](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?business=GTYL35E47Y2AN&amount=5&currency_code=EUR)
+
+Buy me a beer...🍺🍺🍺🍺🍺🍺
