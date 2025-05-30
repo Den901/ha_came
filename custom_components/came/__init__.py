@@ -30,9 +30,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.dispatcher import async_dispatcher_send, dispatcher_send
 from homeassistant.helpers.typing import ConfigType
-from .pycame.came_manager import CameManager
-from .pycame.devices import CameDevice
-from .pycame.exceptions import ETIDomoConnectionError, ETIDomoConnectionTimeoutError
+from pycame.came_manager import CameManager
+from pycame.devices import CameDevice
+from pycame.exceptions import ETIDomoConnectionError, ETIDomoConnectionTimeoutError
 
 from .const import (
     CONF_CAME_LISTENER,
