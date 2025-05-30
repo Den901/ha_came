@@ -1,13 +1,14 @@
 {
   "domain": "came",
   "name": "CAME ETI/Domo",
-  "version": "0.3.1-alpha1",
+  #"version": "0.3.1-alpha1",
+  "version": "1.0.1-stable",
   "documentation": "https://github.com/Den901/ha-came",
   "issue_tracker": "https://github.com/Den901/ha-came/issues",
   "dependencies": [],
   "config_flow": true,
   "codeowners": [
-    "@Limych"
+    "@Den901"
   ],
   "requirements": [
     "pycame"
