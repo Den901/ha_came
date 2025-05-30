@@ -1,5 +1,16 @@
 *Please :star: this repo if you find it useful*
 
+## Support Me
+
+If you appreciate my work and want to buy me a beer, you can donate via PayPal:
+
+
+
+[![Buy me a beer](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?business=GTYL35E47Y2AN&amount=5&currency_code=EUR)
+
+Buy me a beer...🍺🍺🍺🍺🍺🍺
+
+
 # Note: Alpha version installation
 
 Due to the fact that the `pycame` library and this integration are not published, automatic component installation is not available. You will have to install them manually.
