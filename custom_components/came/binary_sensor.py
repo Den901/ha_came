@@ -10,9 +10,9 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from pycame.came_manager import CameManager
-from pycame.devices import CameDevice
-from pycame.devices.came_digitalin import BINARY_SENSOR_STATE_OFF
+from .pycame.came_manager import CameManager
+from .pycame.devices import CameDevice
+from .pycame.devices.came_digitalin import BINARY_SENSOR_STATE_OFF
 
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
 from .entity import CameEntity
