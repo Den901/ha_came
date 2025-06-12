@@ -11,7 +11,7 @@ from homeassistant.const import ATTR_ATTRIBUTION, CONF_ENTITIES
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
-from pycame.devices import CameDevice
+from .pycame.devices import CameDevice
 
 from .const import ATTRIBUTION, DOMAIN, SIGNAL_DELETE_ENTITY, SIGNAL_UPDATE_ENTITY
 
