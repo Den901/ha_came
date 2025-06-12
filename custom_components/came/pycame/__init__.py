@@ -1,3 +1,3 @@
 """Python integration for ETI/Domo."""
 
-from pycame.const import VERSION  # noqa: F401
+from .const import VERSION  # noqa: F401
