@@ -6,15 +6,15 @@ from typing import List, Optional
 
 import requests
 
-from pycame.const import DEBUG_DEEP, STARTUP_MESSAGE, VERSION
-from pycame.devices import get_featured_devices
-from pycame.devices.base import CameDevice, DeviceState
-from pycame.exceptions import (
+from .pycame.const import DEBUG_DEEP, STARTUP_MESSAGE, VERSION
+from .pycame.devices import get_featured_devices
+from .pycame.devices.base import CameDevice, DeviceState
+from .pycame.exceptions import (
     ETIDomoConnectionError,
     ETIDomoConnectionTimeoutError,
     ETIDomoError,
 )
-from pycame.models import Floor, Room
+from .pycame.models import Floor, Room
 
 _LOGGER = logging.getLogger(__name__)
 
