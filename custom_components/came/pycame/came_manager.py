@@ -14,7 +14,7 @@ from .exceptions import (
     ETIDomoConnectionTimeoutError,
     ETIDomoError,
 )
-from .pycame.models import Floor, Room
+from .models import Floor, Room
 
 _LOGGER = logging.getLogger(__name__)
 
