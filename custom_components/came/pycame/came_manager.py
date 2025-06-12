@@ -6,10 +6,10 @@ from typing import List, Optional
 
 import requests
 
-from .pycame.const import DEBUG_DEEP, STARTUP_MESSAGE, VERSION
-from .pycame.devices import get_featured_devices
-from .pycame.devices.base import CameDevice, DeviceState
-from .pycame.exceptions import (
+from .const import DEBUG_DEEP, STARTUP_MESSAGE, VERSION
+from .devices import get_featured_devices
+from .devices.base import CameDevice, DeviceState
+from .exceptions import (
     ETIDomoConnectionError,
     ETIDomoConnectionTimeoutError,
     ETIDomoError,
