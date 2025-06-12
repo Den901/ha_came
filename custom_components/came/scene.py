@@ -4,7 +4,7 @@ from typing import List
 from homeassistant.components.scene import Scene
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from pycame.came_manager import CameManager
+from .pycame.came_manager import CameManager
 from .const import DOMAIN, CONF_MANAGER
 
 _LOGGER = logging.getLogger(__name__)
