@@ -14,8 +14,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import StateType
 from homeassistant.util.unit_system import PRESSURE_UNITS, TEMPERATURE_UNITS
-from pycame.came_manager import CameManager
-from pycame.devices import CameDevice
+from .pycame.came_manager import CameManager
+from .pycame.devices import CameDevice
 
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
 from .entity import CameEntity
