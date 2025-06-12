@@ -13,9 +13,9 @@ from homeassistant.components.switch import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from pycame.came_manager import CameManager
-from pycame.devices import CameDevice
-from pycame.devices.came_relay import GENERIC_RELAY_STATE_ON
+from .pycame.came_manager import CameManager
+from .pycame.devices import CameDevice
+from .pycame.devices.came_relay import GENERIC_RELAY_STATE_ON
 
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
 from .entity import CameEntity
