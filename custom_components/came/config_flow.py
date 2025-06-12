@@ -7,7 +7,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_TOKEN, CONF_USERNAME
 from homeassistant.helpers.typing import ConfigType
-from pycame.came_manager import CameManager
+from .pycame.came_manager import CameManager
 
 from .const import DOMAIN  # pylint: disable=unused-import
 
