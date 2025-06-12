@@ -11,7 +11,7 @@ from homeassistant.components.climate import (
     ClimateEntityFeature,
 )
 from homeassistant.components.climate.const import HVACAction
-from pycame.devices.came_thermo import (
+from .pycame.devices.came_thermo import (
     THERMO_FAN_SPEED_SLOW,
     THERMO_FAN_SPEED_MEDIUM,
     THERMO_FAN_SPEED_FAST,
@@ -29,9 +29,9 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from pycame.came_manager import CameManager
-from pycame.devices import CameDevice
-from pycame.devices.came_thermo import (
+from .pycame.came_manager import CameManager
+from .pycame.devices import CameDevice
+from .pycame.devices.came_thermo import (
     THERMO_DEHUMIDIFIER_ON,
     THERMO_MODE_AUTO,
     THERMO_MODE_JOLLY,
