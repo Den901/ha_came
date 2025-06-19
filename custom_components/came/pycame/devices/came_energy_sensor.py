@@ -2,6 +2,7 @@
 
 import logging
 from typing import Optional
+from ..exceptions import ETIDomoUnmanagedDeviceError  # <--- AGGIUNGI QUESTA RIGA
 
 from .base import TYPE_ENERGY_SENSOR, CameDevice, DeviceState, StateType
 
@@ -15,7 +16,7 @@ class CameEnergySensor(CameDevice):
         self,
         manager,
         device_info: DeviceState,
-        update_cmd_base: str = "meters", #meters_list_req
+        update_cmd_base: str = "meters",
         update_src_field: str = "array",
         device_class: Optional[str] = None,
     ):
@@ -29,14 +30,36 @@ class CameEnergySensor(CameDevice):
 
     def update(self):
         """Update device state."""
-        self._force_update(self._update_cmd_base, self._update_src_field)
+        try:
+            self._force_update(self._update_cmd_base, self._update_src_field)
+        except ETIDomoUnmanagedDeviceError:
+            # Sensor is passive/read-only, just skip forced update
+            _LOGGER.debug("Skipping unmanaged device: %s", self.name)
+
+    def push_update(self, state: DeviceState):
+        """Update from ETI/Domo push data."""
+        _LOGGER.warning("🔁 push_update chiamato per %s", self.name)
+        updated = self.update_state(state)
+        if updated and hasattr(self, "hass_entity"):
+            self.hass_entity.async_write_ha_state()
 
     @property
     def state(self) -> StateType:
-        """Return the current device state."""
-        return self._device_info.get("value")
+        """Return the current power in W."""
+        return self._device_info.get("instant_power")
 
     @property
     def unit_of_measurement(self) -> Optional[str]:
-        """Return the unit of measurement of this sensor, if any."""
-        return self._device_info.get("unit")
+        """Return the unit of measurement."""
+        return self._device_info.get("unit") or "W"
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra attributes for the sensor."""
+        return {
+            "produced": self._device_info.get("produced"),
+            "last_24h_avg": self._device_info.get("last_24h_avg"),
+            "last_month_avg": self._device_info.get("last_month_avg"),
+            "energy_unit": self._device_info.get("energy_unit"),
+        }
+
