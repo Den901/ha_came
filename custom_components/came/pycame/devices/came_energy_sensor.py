@@ -2,8 +2,7 @@
 
 import logging
 from typing import Optional
-from ..exceptions import ETIDomoUnmanagedDeviceError  # <--- AGGIUNGI QUESTA RIGA
-
+from ..exceptions import ETIDomoUnmanagedDeviceError
 from .base import TYPE_ENERGY_SENSOR, CameDevice, DeviceState, StateType
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,16 +32,17 @@ class CameEnergySensor(CameDevice):
         try:
             self._force_update(self._update_cmd_base, self._update_src_field)
         except ETIDomoUnmanagedDeviceError:
-            # Sensor is passive/read-only, just skip forced update
-            _LOGGER.debug("Skipping unmanaged device: %s", self.name)
+            pass
 
     def push_update(self, state: DeviceState):
         """Update from ETI/Domo push data."""
-        _LOGGER.warning("🔁 push_update chiamato per %s", self.name)
+        if self._device_info.get("id") != state.get("id"):           
+            return
+            
         updated = self.update_state(state)
         if updated and hasattr(self, "hass_entity"):
             self.hass_entity.async_write_ha_state()
-
+    
     @property
     def state(self) -> StateType:
         """Return the current power in W."""

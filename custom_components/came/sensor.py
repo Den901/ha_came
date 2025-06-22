@@ -1,27 +1,28 @@
 """Support for the CAME analog sensors."""
 
-from homeassistant.components.sensor import DOMAIN as SENSOR_DOMAIN
+import logging
 from homeassistant.components.sensor import (
+    DOMAIN as SENSOR_DOMAIN,
     ENTITY_ID_FORMAT,
     SensorEntity,
+    SensorStateClass,
+    SensorDeviceClass,
 )
-from homeassistant.components.sensor import SensorStateClass  # Importa la classe di stato corretta
-from homeassistant.config_entries import ConfigEntry  # Aggiungi questa importazione
-from homeassistant.const import (
-    PERCENTAGE,
-)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.typing import StateType
+from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_system import PRESSURE_UNITS, TEMPERATURE_UNITS
+
 from .pycame.came_manager import CameManager
 from .pycame.devices import CameDevice
 from .pycame.devices.came_energy_sensor import CameEnergySensor
-
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
 from .entity import CameEntity
-# Importa le classi di dispositivo corrette
-from homeassistant.components.sensor import SensorDeviceClass
+
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
@@ -32,7 +33,6 @@ async def async_setup_entry(
         """Discover and add a discovered CAME sensor."""
         if not dev_ids:
             return
-
         entities = await hass.async_add_executor_job(_setup_entities, hass, dev_ids)
         async_add_entities(entities)
 
@@ -43,7 +43,6 @@ async def async_setup_entry(
     devices_ids = hass.data[DOMAIN][CONF_PENDING].pop(SENSOR_DOMAIN, [])
     await async_discover_sensor(devices_ids)
 
-
 def _setup_entities(hass, dev_ids):
     """Set up CAME analog sensor device."""
     manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
@@ -53,14 +52,18 @@ def _setup_entities(hass, dev_ids):
         if device is None:
             continue
         if isinstance(device, CameEnergySensor):
+            produced = 0
+            extra = device.extra_state_attributes
+            if isinstance(extra, dict):
+                produced = extra.get("produced", 0)
+
             power_sensor = CameEnergySensorEntity(device)
-            energy_sensor = CameEnergyTotalSensorEntity(power_sensor)
+            energy_sensor = CameEnergyTotalSensorEntity(power_sensor, produced=produced)
             entities.append(power_sensor)
             entities.append(energy_sensor)
         else:
             entities.append(CameSensorEntity(device))
     return entities
-
 
 class CameSensorEntity(CameEntity, SensorEntity):
     """CAME analog sensor device entity."""
@@ -69,9 +72,8 @@ class CameSensorEntity(CameEntity, SensorEntity):
         """Init CAME analog sensor device entity."""
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
+        self._attr_state_class = SensorStateClass.MEASUREMENT
 
-        self._attr_state_class = SensorStateClass.MEASUREMENT  # Nuovo
-        
         if self._device.unit_of_measurement == "%":
             self._attr_device_class = SensorDeviceClass.HUMIDITY
             self._attr_native_unit_of_measurement = PERCENTAGE
@@ -84,25 +86,23 @@ class CameSensorEntity(CameEntity, SensorEntity):
         else:
             self._attr_device_class = self._device.device_class
             self._attr_native_unit_of_measurement = self._device.unit_of_measurement
-       
+
         self._attr_unit_of_measurement = self._device.unit_of_measurement
 
     @property
     def state(self) -> StateType:
         """Return the state of the entity."""
         return self._device.state
-        
-
 
 class CameEnergySensorEntity(CameEntity, SensorEntity):
     """CAME energy sensor device entity."""
 
-    _attr_should_poll = True 
+    _attr_should_poll = True
 
     def __init__(self, device: CameDevice):
         """Init CAME energy sensor device entity."""
         super().__init__(device)
-        device.hass_entity = self 
+        device.hass_entity = self
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_device_class = SensorDeviceClass.POWER
@@ -111,7 +111,6 @@ class CameEnergySensorEntity(CameEntity, SensorEntity):
     def update(self):
         """Update the energy sensor entity."""
         self._device.update()
-
 
     @property
     def native_value(self) -> StateType:
@@ -126,17 +125,21 @@ class CameEnergySensorEntity(CameEntity, SensorEntity):
         """Return the extra attributes."""
         return self._device.extra_state_attributes or {}
 
-from homeassistant.util import dt as dt_util
-from homeassistant.helpers.entity import Entity
-
 class CameEnergyTotalSensorEntity(CameEntity, SensorEntity):
     """Sensor that integrates power to compute energy."""
 
-    def __init__(self, source_entity: CameEnergySensorEntity):
+    def __init__(self, source_entity: CameEnergySensorEntity, produced: int = 0):
         super().__init__(source_entity._device)
         self._source_entity = source_entity
-        self._attr_name = f"{source_entity.name} Consumo energia"
-        self._attr_unique_id = f"{source_entity.unique_id}_energy"
+        self._produced = produced
+
+        if produced == 1:
+            self._attr_name = f"{source_entity.name} Energia prodotta"
+            self._attr_unique_id = f"{source_entity.unique_id}_energy_produced"
+        else:
+            self._attr_name = f"{source_entity.name} Energia consumata"
+            self._attr_unique_id = f"{source_entity.unique_id}_energy_consumed"
+
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
         self._attr_native_unit_of_measurement = "kWh"
@@ -154,4 +157,4 @@ class CameEnergyTotalSensorEntity(CameEntity, SensorEntity):
     @property
     def native_value(self):
         return round(self._energy_total, 3)
-        
+
