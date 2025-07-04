@@ -102,11 +102,13 @@ class CameCoverEntity(CameEntity, CoverEntity):
         _LOGGER.debug("Stop the cover %s", self.entity_id)
         self._device.stop()
    
+    @property
     def is_opening(self) -> bool:
         """Return True if the cover is currently opening."""
         return self._device.state == OPENING_STATE_OPEN
 
 
+    @property
     def is_closing(self) -> bool:
         """Return True if the cover is currently closing."""
         return self._device.state == OPENING_STATE_CLOSE
