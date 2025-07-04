@@ -83,18 +83,7 @@ class CameCoverEntity(CameEntity, CoverEntity):
         return None  # Unknown state
 
 
-        def is_opened(self):
-        """Return True if cover is opened."""
-        if self._device.state == OPENING_STATE_CLOSE:
-            return False
-        elif self._device.state == OPENING_STATE_OPEN:
-            return True
-        elif self._device.state == OPENING_STATE_STOP:
-            if self._last_command == "close":
-                return False
-            elif self._last_command == "open":
-                return True
-        return None  # Unknown state
+  
         
     def open_cover(self):
         """Open the cover."""
