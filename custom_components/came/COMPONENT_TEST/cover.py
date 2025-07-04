@@ -1,4 +1,4 @@
-"""Support for the CAME covers."""
+"""Supporto per le coperture CAME."""
 import logging
 from typing import List
 
@@ -24,14 +24,13 @@ from .entity import CameEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ):
-    """Set up CAME openings devices dynamically through discovery."""
+    """Configura i dispositivi di apertura CAME tramite scoperta dinamica."""
 
     async def async_discover_sensor(dev_ids):
-        """Discover and add a discovered CAME openings devices."""
+        """Scopri e aggiungi dispositivi di apertura CAME trovati."""
         if not dev_ids:
             return
 
@@ -45,9 +44,8 @@ async def async_setup_entry(
     devices_ids = hass.data[DOMAIN][CONF_PENDING].pop(COVER_DOMAIN, [])
     await async_discover_sensor(devices_ids)
 
-
 def _setup_entities(hass, dev_ids: List[str]):
-    """Set up CAME opening devices."""
+    """Configura i dispositivi di apertura CAME."""
     manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
     entities = []
     for dev_id in dev_ids:
@@ -59,18 +57,18 @@ def _setup_entities(hass, dev_ids: List[str]):
 
 
 class CameCoverEntity(CameEntity, CoverEntity):
-    """CAME opening device entity."""
+    """Entità del dispositivo di apertura CAME."""
 
     def __init__(self, device: CameDevice):
-        """Initialize CAME opening device entity."""
+        """Inizializza l'entità del dispositivo di apertura CAME."""
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
-        self._last_command = None  # "open" or "close"
-        self._attr_assumed_state = True  # No feedback, we assume state
+        self._last_command = None  # "open" o "close"
+        self._attr_assumed_state = True  # Nessun feedback, assumiamo lo stato
 
     @property
     def is_closed(self):
-        """Return True if cover is closed."""
+        """Restituisce True se la copertura è chiusa."""
         if self._device.state == OPENING_STATE_OPEN:
             return False
         elif self._device.state == OPENING_STATE_CLOSE:
@@ -80,36 +78,45 @@ class CameCoverEntity(CameEntity, CoverEntity):
                 return False
             elif self._last_command == "close":
                 return True
-        return None  # Unknown state
+        return None  # Stato sconosciuto
+
+    @property
+    def is_opened(self):
+        """Restituisce True se la copertura è aperta."""
+        if self._device.state == OPENING_STATE_CLOSE:
+            return False
+        elif self._device.state == OPENING_STATE_OPEN:
+            return True
+        elif self._device.state == OPENING_STATE_STOP:
+            if self._last_command == "close":
+                return False
+            elif self._last_command == "open":
+                return True
+        return None  # Stato sconosciuto
 
     @property
     def is_opening(self) -> bool:
-        """Return True if the cover is currently opening."""
+        """Restituisce True se la copertura è attualmente in apertura."""
         return self._device.state == OPENING_STATE_OPEN
-
 
     @property
     def is_closing(self) -> bool:
-        """Return True if the cover is currently closing."""
+        """Restituisce True se la copertura è attualmente in chiusura."""
         return self._device.state == OPENING_STATE_CLOSE
 
-  
-        
     def open_cover(self):
-        """Open the cover."""
-        _LOGGER.debug("Open the cover %s", self.entity_id)
+        """Apri la copertura."""
+        _LOGGER.debug("Apertura della copertura %s", self.entity_id)
         self._last_command = "open"
         self._device.open()
 
     def close_cover(self):
-        """Close the cover."""
-        _LOGGER.debug("Close the cover %s", self.entity_id)
+        """Chiudi la copertura."""
+        _LOGGER.debug("Chiusura della copertura %s", self.entity_id)
         self._last_command = "close"
         self._device.close()
 
     def stop_cover(self):
-        """Stop the cover."""
-        _LOGGER.debug("Stop the cover %s", self.entity_id)
+        """Ferma la copertura."""
+        _LOGGER.debug("Fermare la copertura %s", self.entity_id)
         self._device.stop()
-   
-
