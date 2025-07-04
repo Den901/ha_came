@@ -108,15 +108,24 @@ class CameCoverEntity(CameEntity, CoverEntity):
         """Apri la copertura."""
         _LOGGER.debug("Apertura della copertura %s", self.entity_id)
         self._last_command = "open"
-        self._device.open()
+        try:
+            self._device.open()
+        except Exception as e:
+            _LOGGER.error("Errore durante l'apertura della copertura %s: %s", self.entity_id, e)
 
     def close_cover(self):
         """Chiudi la copertura."""
         _LOGGER.debug("Chiusura della copertura %s", self.entity_id)
         self._last_command = "close"
-        self._device.close()
+        try:
+            self._device.close()
+        except Exception as e:
+            _LOGGER.error("Errore durante la chiusura della copertura %s: %s", self.entity_id, e)
 
     def stop_cover(self):
         """Ferma la copertura."""
         _LOGGER.debug("Fermare la copertura %s", self.entity_id)
-        self._device.stop()
+        try:
+            self._device.stop()
+        except Exception as e:
+            _LOGGER.error("Errore durante il fermo della copertura %s: %s", self.entity_id, e)
