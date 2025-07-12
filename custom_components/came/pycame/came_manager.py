@@ -9,12 +9,14 @@ import requests
 from .const import DEBUG_DEEP, STARTUP_MESSAGE, VERSION
 from .devices import get_featured_devices
 from .devices.base import CameDevice, DeviceState
+from .devices.came_scenarios import ScenarioManager
 from .exceptions import (
     ETIDomoConnectionError,
     ETIDomoConnectionTimeoutError,
     ETIDomoError,
 )
 from .models import Floor, Room
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,6 +33,7 @@ class CameManager:
         password: str,
         token: str,
         session: Optional[requests.Session] = None,
+        hass: Optional["HomeAssistant"] = None,
     ):
         """Initialize connection with the ETI/Domo."""
         if not _STARTUP:
@@ -47,7 +50,7 @@ class CameManager:
         self._password = password
         self._token = token
         self._session = session or requests.Session()
-
+        self._hass = hass
         self._client_id = None
         self._swver = None
         self._serial = None
@@ -56,7 +59,8 @@ class CameManager:
         self._floors = None
         self._rooms = None
         self._devices = None
-
+        self.scenario_manager = ScenarioManager(self)
+        
     @property
     def software_version(self) -> Optional[str]:
         """Return a software version of ETI/Domo."""
@@ -269,13 +273,16 @@ class CameManager:
 
         else:
             _LOGGER.debug("Update devices info: Use cached data")
+            _LOGGER.debug("Dispositivi totali dopo aggiornamento: %s", [d.type for d in self._devices])
 
+        
         return self._devices
 
     def get_all_devices(self) -> Optional[List[CameDevice]]:
         """Get list of all discovered devices."""
         return self._update_devices()
-
+        
+        
     def get_device_by_id(self, device_id: str) -> Optional[CameDevice]:
         """Get device by unique ID."""
         for device in self.get_all_devices():
@@ -330,15 +337,23 @@ class CameManager:
         if timeout is not None:
             cmd["timeout"] = timeout
         response = self.application_request(cmd, "status_update_resp")
+        if response:
+            _LOGGER.debug("Risposta status_update(): %s", response)
 
         updated = False
 
         for device_info in response.get("result", []):  # type: DeviceState
+            _LOGGER.debug("Ricevuto cmd_name: %s - contenuto: %s", device_info.get("cmd_name"), device_info)
+
+            # Delega aggiornamenti scenari al manager
+            if device_info.get("cmd_name", "").startswith("scenario_"):
+                self.scenario_manager.handle_update(self._hass, device_info)  
+            
             if device_info.get("cmd_name") == "plant_update_ind":
                 self._devices = None
                 self._update_devices()
                 return True
-
+                         
             act_id = device_info.get("act_id")
             if act_id:
                 device = self.get_device_by_act_id(act_id)
@@ -346,32 +361,3 @@ class CameManager:
                     updated |= device.update_state(device_info)
 
         return updated
-
-
-# Scenari
-
-    def get_scenarios(self):
-        """Richiede la lista degli scenari."""
-        response = self._session.post(self._api_url, json={"cmd_name": "scenarios_list_req"})
-        return response.json().get("array", [])
-
-    def activate_scenario(self, scenario_id):
-        """Attiva uno scenario."""
-        self._session.post(self._api_url, json={
-            "cmd_name": "scenario_activation_req_",
-            "id": scenario_id
-        })
-
-    def create_scenario(self, name):
-        """Inizia la registrazione di un nuovo scenario."""
-        return self._session.post(self._api_url, json={
-            "cmd_name": "scenario_registration_start",
-            "name": name
-        })
-
-    def delete_scenario(self, scenario_id):
-        """Elimina uno scenario esistente."""
-        self._session.post(self._api_url, json={
-            "cmd_name": "scenario_delete_req",
-            "id": scenario_id
-        })
