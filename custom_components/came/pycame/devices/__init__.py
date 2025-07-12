@@ -12,6 +12,7 @@ from .came_thermo import CameThermo
 from .came_relay import CameRelay
 from .came_opening import CameOpening
 from .came_digitalin import CameDigitalIn
+from .came_scenarios import ScenarioDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +38,9 @@ def get_featured_devices(manager, feature: str) -> List[CameDevice]:
     elif feature == "digitalin":
         cmd_name = "digitalin_list_req"
         response_name = "digitalin_list_resp"
+        
+    elif feature == "scenarios":
+        return [ScenarioDevice(manager)]    # Lo scenario non è un device singolo: restituiamo il gestore centralizzato          
     else:
         _LOGGER.warning("Unsupported feature type: %s", feature)
         return devices

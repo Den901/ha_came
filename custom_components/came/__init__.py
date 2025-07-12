@@ -13,9 +13,10 @@ from typing import List
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.climate import DOMAIN as CLIMATE
-from homeassistant.components.cover import DOMAIN as COVER  # NEW ADD!
+from homeassistant.components.cover import DOMAIN as COVER
 from homeassistant.components.light import DOMAIN as LIGHT
 from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.scene import DOMAIN as SCENE
 from homeassistant.components.switch import DOMAIN as SWITCH
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -34,6 +35,8 @@ from .pycame.came_manager import CameManager
 from .pycame.devices import CameDevice
 from .pycame.exceptions import ETIDomoConnectionError, ETIDomoConnectionTimeoutError
 from .pycame.devices.base import TYPE_ENERGY_SENSOR
+from .pycame.devices.came_scenarios import ScenarioManager
+
 
 from .const import (
     CONF_CAME_LISTENER,
@@ -70,7 +73,8 @@ CAME_TYPE_TO_HA = {
     "Generic relay": SWITCH,
     "Digital input": BINARY_SENSOR,
     "Energy Sensor": SENSOR,
-    "Opening": COVER,  # NEW ENTRY!
+    "Scenario": SCENE,
+    "Opening": COVER,
 }
 
 
@@ -107,6 +111,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         config.get(CONF_USERNAME),
         config.get(CONF_PASSWORD),
         config.get(CONF_TOKEN),
+        hass=hass
     )
 
     def initial_update():
@@ -146,6 +151,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "stop_event": stop_event,
         "energy_polling_task": None,  # sarà settato dopo
     }
+
+    hass.data[DOMAIN]["came_scenario_manager"] = manager.scenario_manager
 
     thread.start()
 
@@ -203,12 +210,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 dev_types.setdefault(ha_type, [])
                 dev_types[ha_type].append(device.unique_id)
                 hass.data[DOMAIN][CONF_ENTITIES][device.unique_id] = None
-
+        _LOGGER.info("Tipi rilevati per piattaforme HA: %s", list(dev_types.keys()))
         for ha_type, dev_ids in dev_types.items():
             config_entries_key = f"{ha_type}.{DOMAIN}"
             if config_entries_key not in hass.data[DOMAIN][CONF_ENTRY_IS_SETUP]:
                 hass.data[DOMAIN][CONF_PENDING][ha_type] = dev_ids
-                
+                _LOGGER.debug("Avvio setup per entità Home Assistant: %s", ha_type)
                 # MODIFICATO: Usa `await` per attendere la configurazione del tipo di dispositivo.
                 # MODIFICATO: Usa `async_forward_entry_setups` per conformità
                 await hass.config_entries.async_forward_entry_setups(entry, [ha_type])
@@ -255,7 +262,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
 
     hass.bus.async_listen_once("homeassistant_started", start_energy_polling)
+    
+    async def async_refresh_scenarios_service(call):
+        _LOGGER.debug("Servizio refresh_scenarios chiamato")
+        scenario_manager = hass.data[DOMAIN]["came_scenario_manager"]
+        await hass.async_add_executor_job(scenario_manager.refresh_scenarios)
+        _LOGGER.debug("refresh_scenarios completato, invio evento 'came_scenarios_refreshed'")
+        dispatcher_send(hass, "came_scenarios_refreshed")
 
+    hass.services.async_register(DOMAIN, "refresh_scenarios", async_refresh_scenarios_service)
+    
     return True
 
 
@@ -284,20 +300,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         thread.join()
 
     return unload_ok
-#scenari
-async def async_setup_services(hass):
-    """Configura i servizi personalizzati."""
-    manager = hass.data[DOMAIN][CONF_MANAGER]
-
-    async def create_scenario(call):
-        await hass.async_add_executor_job(
-            manager.create_scenario, call.data["name"]
-        )
-
-    async def delete_scenario(call):
-        await hass.async_add_executor_job(
-            manager.delete_scenario, call.data["scenario_id"]
-        )
-
-    hass.services.async_register(DOMAIN, "create_scenario", create_scenario)
-    hass.services.async_register(DOMAIN, "delete_scenario", delete_scenario)
