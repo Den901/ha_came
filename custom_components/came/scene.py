@@ -59,7 +59,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
     # Crea le entità iniziali
-    scenarios = await hass.async_add_executor_job(manager.scenario_manager.get_scenarios)
+    scenarios = await manager.scenario_manager.get_scenarios()
     _LOGGER.debug("Setup iniziale scenari: caricati %d scenari", len(scenarios))
     entities = create_new_entities(scenarios)
     async_add_entities(entities)
@@ -69,7 +69,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         _LOGGER.debug("Ricevuto evento came_scenarios_refreshed, controllo nuovi scenari...")
         #_LOGGER.debug("Entità già registrate: %s", list(_existing_scenario_entities.keys()))
 
-        scenarios = await hass.async_add_executor_job(manager.scenario_manager.get_scenarios)
+        scenarios = await manager.scenario_manager.get_scenarios()
 
         # Fai una copia degli id esistenti PRIMA di aggiungere nuovi
         existing_ids = set(_existing_scenario_entities.keys())
@@ -144,9 +144,7 @@ class CameScenarioEntity(Scene):
         """Attiva lo scenario."""
         async def _activate():
             try:
-                await self.hass.async_add_executor_job(
-                    self._manager.scenario_manager.activate_scenario, self._scenario["id"]
-                )
+                await self._manager.scenario_manager.activate_scenario(self._scenario["id"])
             except Exception as e:
                 _LOGGER.error(f"Errore attivazione scenario {self._scenario['id']}: {e}", exc_info=True)
                 raise                 

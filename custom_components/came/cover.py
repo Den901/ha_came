@@ -56,15 +56,26 @@ async def async_setup_entry(
 
 def _setup_entities(hass, devices):
     entities = []
+    # Try to get per-cover config from YAML if present
+    # Always use DOMAIN__yaml as key, not f"came__yaml"
+    from .const import DATA_YAML
+    yaml_config = hass.data.get(DATA_YAML, {})
+    covers_config = yaml_config.get("covers", {})
+
     for device in devices:
-        entities.append(CameCoverEntity(device))
+        unique_id = getattr(device, "unique_id", None)
+        durations = covers_config.get(unique_id, {})
+        opening_travel_duration = durations.get("opening_travel_duration")
+        closing_travel_duration = durations.get("closing_travel_duration")
+        _LOGGER.debug(f"Setting up cover {unique_id} with opening_travel_duration={opening_travel_duration}, closing_travel_duration={closing_travel_duration}")
+        entities.append(CameCoverEntity(device, opening_travel_duration, closing_travel_duration))
     return entities
 
 
 class CameCoverEntity(CameEntity, CoverEntity):
     """CAME opening device entity."""
 
-    def __init__(self, device: CameDevice):
+    def __init__(self, device: CameDevice, opening_travel_duration=None, closing_travel_duration=None):
         """Init CAME opening device entity."""
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
@@ -73,6 +84,9 @@ class CameCoverEntity(CameEntity, CoverEntity):
         self._attr_target_postion = 100.0
         self._attr_current_direction = 0 # 0: stop, 1: opening, -1: closing
         self._attr_supported_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP | CoverEntityFeature.SET_POSITION
+        from .const import COVER_OPENING_TRAVEL_DURATION, COVER_CLOSING_TRAVEL_DURATION
+        self.opening_travel_duration = opening_travel_duration if opening_travel_duration is not None else COVER_OPENING_TRAVEL_DURATION
+        self.closing_travel_duration = closing_travel_duration if closing_travel_duration is not None else COVER_CLOSING_TRAVEL_DURATION
 
     @property
     def assumed_state(self):
@@ -167,9 +181,9 @@ class CameCoverEntity(CameEntity, CoverEntity):
         _LOGGER.debug("duration: %s", duration)
         
         if(self._attr_current_direction == 1):
-            newPos = self._attr_real_postion + (duration * 100 / COVER_OPENING_TRAVEL_DURATION) 
+            newPos = self._attr_real_postion + (duration * 100 / self.opening_travel_duration) 
         elif(self._attr_current_direction == -1):
-            newPos = self._attr_real_postion - (duration * 100 / COVER_CLOSING_TRAVEL_DURATION)
+            newPos = self._attr_real_postion - (duration * 100 / self.closing_travel_duration)
         
         if( newPos < 0):
             newPos = 0

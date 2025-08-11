@@ -13,8 +13,10 @@ from typing import List
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.climate import DOMAIN as CLIMATE
+from homeassistant.components.cover import DOMAIN as COVER
 from homeassistant.components.light import DOMAIN as LIGHT
 from homeassistant.components.sensor import DOMAIN as SENSOR
+from homeassistant.components.scene import DOMAIN as SCENE
 from homeassistant.components.switch import DOMAIN as SWITCH
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
@@ -53,12 +55,24 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
+# Allow optional per-cover travel durations in config
 ACCOUNT_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST): cv.string,
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_TOKEN): cv.string,
+        vol.Optional(CONF_HOST): cv.string,
+        vol.Optional(CONF_USERNAME): cv.string,
+        vol.Optional(CONF_PASSWORD): cv.string,
+        vol.Optional(CONF_TOKEN): cv.string,
+        vol.Optional("covers"): vol.Schema(
+            {
+                cv.string: vol.Schema(
+                    {
+                        vol.Optional("opening_travel_duration"): vol.Coerce(float),
+                        vol.Optional("closing_travel_duration"): vol.Coerce(float),
+                    }
+                )
+            }
+        ),
     }
 )
 
@@ -122,37 +136,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     except ETIDomoConnectionTimeoutError as exc:
         raise ConfigEntryNotReady from exc
 
-    # Create stop event for thread and polling
-    stop_event = threading.Event()
 
-    def _came_update_listener(hass: HomeAssistant, manager: CameManager, stop_event: threading.Event):
-        """Thread that listens for device updates in a loop."""
+    # Create stop event for polling
+    stop_event = asyncio.Event()
+
+    async def _came_update_listener():
+        """Async task that listens for device updates in a loop."""
         while not stop_event.is_set():
             try:
-                if manager.status_update():
-                    #_LOGGER.debug("Received devices status update.")
+                if await manager.status_update():
                     dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
             except ETIDomoConnectionError:
                 _LOGGER.debug("Server goes offline. Reconnecting...")
-            sleep(1)  # to avoid too fast loop
+            await asyncio.sleep(1)  # to avoid too fast loop
 
-    thread = threading.Thread(
-        target=_came_update_listener, args=(hass, manager, stop_event), daemon=True
-    )
+    update_task = hass.loop.create_task(_came_update_listener())
 
     hass.data[DOMAIN] = {
         CONF_MANAGER: manager,
         CONF_ENTITIES: {},
         CONF_ENTRY_IS_SETUP: set(),
         CONF_PENDING: {},
-        CONF_CAME_LISTENER: thread,
+        CONF_CAME_LISTENER: update_task,
         "stop_event": stop_event,
         "energy_polling_task": None,  # will be set later
     }
 
     hass.data[DOMAIN]["came_scenario_manager"] = manager.scenario_manager
-
-    thread.start()
 
 
     async def async_energy_polling(hass: HomeAssistant, manager: CameManager, stop_event: threading.Event):
@@ -162,7 +172,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 try:
                     response = await asyncio.wait_for(
                         hass.async_add_executor_job(
-                            awaitmanager.application_request,
+                            manager.application_request,
                             {"cmd_name": "meters_list_req"},
                             "meters_list_resp",
                         ),
@@ -262,7 +272,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_refresh_scenarios_service(call):
         _LOGGER.debug("Servizio refresh_scenarios chiamato")
         scenario_manager = hass.data[DOMAIN]["came_scenario_manager"]
-        await hass.async_add_executor_job(scenario_manager.refresh_scenarios)
+        await scenario_manager.refresh_scenarios()
         _LOGGER.debug("refresh_scenarios completato, invio evento 'came_scenarios_refreshed'")
         dispatcher_send(hass, "came_scenarios_refreshed")
 
