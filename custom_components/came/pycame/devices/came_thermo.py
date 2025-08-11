@@ -96,11 +96,8 @@ class CameThermo(CameDevice):
         """Return True if device can change wind speed."""
         return self.fan_speed is not None
 
-    def update(self):
-        """Update device state."""
-        self._force_update("thermo")
 
-    def zone_config(
+    async def zone_config(
         self,
         mode: int = None,
         temperature: float = None,
@@ -136,7 +133,7 @@ class CameThermo(CameDevice):
             cmd["extended_infos"] = 1
             cmd["fan_speed"] = fan_speed
 
-        self._manager.application_request(cmd)
+        await self._manager.application_request(cmd)
 
         log = {}
         for k in ["mode", "set_point", "season", "fan_speed"]:
@@ -160,16 +157,16 @@ class CameThermo(CameDevice):
             return "HIGH"
         elif (
             speed == THERMO_FAN_SPEED_AUTO or speed == THERMO_FAN_SPEED_OFF
-        ):  # In modalità OFF, il ventilatore è spento ma l'app lo mostra comunque come AUTO
+        ):  # In OFF mode, the fan is off but the app still shows it as AUTO
             return "AUTO"
-        return "AUTO"  # fallback sicuro
+        return "AUTO"  # safe fallback
 
-    def set_target_temperature(self, temp: float) -> None:
+    async def set_target_temperature(self, temp: float) -> None:
         """Set the temperature we try to reach."""
-        self.zone_config(temperature=temp)
+        await self.zone_config(temperature=temp)
 
-    def set_fan_speed(self, speed: str) -> None:
-        """Imposta la velocità della ventola del fan coil."""
+    async def set_fan_speed(self, speed: str) -> None:
+        """Set the fan coil speed."""
         speed_map = {
             "LOW": THERMO_FAN_SPEED_SLOW,
             "MEDIUM": THERMO_FAN_SPEED_MEDIUM,
@@ -178,16 +175,22 @@ class CameThermo(CameDevice):
         }
         if speed not in speed_map:
             _LOGGER.warning(
-                "🚫 Velocità non valida per fan coil %s: %s", self.name, speed
+                "🚫 Invalid speed for fan coil %s: %s", self.name, speed
             )
             return
 
-        _LOGGER.info("🌀 Imposto velocità fan coil %s su %s", self.name, speed)
+        _LOGGER.info("🌀 Setting fan coil speed %s to %s", self.name, speed)
         try:
-            self.zone_config(fan_speed=speed_map[speed])
+            await self.zone_config(fan_speed=speed_map[speed])
         except Exception as e:
             _LOGGER.error(
-                "⚠️ Errore durante l'impostazione della velocità fan coil %s: %s",
+                "⚠️ Error while setting fan coil speed %s: %s",
                 self.name,
                 e,
             )
+            
+    async def update(self):
+        """Update device state."""
+        _LOGGER.debug('Updating state for relay "%s"', self.name)
+        await self._force_update("thermo")
+

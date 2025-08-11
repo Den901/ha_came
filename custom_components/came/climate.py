@@ -63,10 +63,17 @@ CAME_SEASON_TO_HA = {
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ):
-    async def async_discover_sensor(dev_ids):
-        if not dev_ids:
-            return
-        entities = await hass.async_add_executor_job(_setup_entities, hass, dev_ids)
+    # Get manager from hass.data
+    from .const import DOMAIN, CONF_MANAGER
+    manager = hass.data[DOMAIN][CONF_MANAGER]
+
+    async def async_discover_sensor(manager, hass, dev_ids):
+        devices = []
+        for dev_id in dev_ids:
+            device = await manager.get_device_by_id(dev_id)
+            if device:
+                devices.append(device)
+        entities = await hass.async_add_executor_job(_setup_entities, hass, devices)
         async_add_entities(entities)
 
     async_dispatcher_connect(
@@ -74,26 +81,22 @@ async def async_setup_entry(
     )
 
     devices_ids = hass.data[DOMAIN][CONF_PENDING].pop(CLIMATE_DOMAIN, [])
-    await async_discover_sensor(devices_ids)
+    await async_discover_sensor(manager, hass, devices_ids)
 
 
-def _setup_entities(hass, dev_ids):
-    manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
+def _setup_entities(hass, devices):
     entities = []
-    for dev_id in dev_ids:
-        device = manager.get_device_by_id(dev_id)
-        if device is None:
-            continue
-
+    for device in devices:
+        _LOGGER.info("🌡️ Thermostat detected: %s → CameClimateEntity", device.name)
         if getattr(device, "support_fan_speed", False):
             _LOGGER.info(
-                "💨 Fan coil rilevato: %s → entità CameFancoilClimateEntity",
+                "💨 Fan coil detected: %s → CameFancoilClimateEntity",
                 device.name,
             )
             entities.append(CameFancoilClimateEntity(device))
         else:
             _LOGGER.info(
-                "🌡️ Termostato rilevato: %s → entità CameClimateEntity", device.name
+                "🌡️ Thermostat detected: %s → CameClimateEntity", device.name
             )
             entities.append(CameClimateEntity(device))
     return entities
@@ -173,25 +176,25 @@ class CameClimateEntity(CameEntity, ClimateEntity):
             ops.append(HVACMode.DRY)
         return ops
 
-    def set_temperature(self, **kwargs) -> None:
+    async def async_set_temperature(self, **kwargs) -> None:
         if ATTR_TEMPERATURE in kwargs:
-            self._device.set_target_temperature(kwargs[ATTR_TEMPERATURE])
+            await self._device.set_target_temperature(kwargs[ATTR_TEMPERATURE])
 
-    def set_hvac_mode(self, hvac_mode: str) -> None:
+    async def async_set_hvac_mode(self, hvac_mode: str) -> None:
         if hvac_mode == HVACMode.OFF:
-            self._device.zone_config(mode=THERMO_MODE_OFF)
+            await self._device.zone_config(mode=THERMO_MODE_OFF)
         elif hvac_mode == HVACMode.HEAT:
-            self._device.zone_config(
+            await self._device.zone_config(
                 mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_WINTER
             )
         elif hvac_mode == HVACMode.COOL:
-            self._device.zone_config(
+            await self._device.zone_config(
                 mode=THERMO_MODE_MANUAL, season=THERMO_SEASON_SUMMER
             )
         elif hvac_mode == HVACMode.AUTO:
-            self._device.zone_config(mode=THERMO_MODE_AUTO)
+            await self._device.zone_config(mode=THERMO_MODE_AUTO)
         else:
-            self._device.zone_config(mode=THERMO_MODE_AUTO)
+            await self._device.zone_config(mode=THERMO_MODE_AUTO)
 
 
 class CameFancoilClimateEntity(CameClimateEntity):
@@ -200,7 +203,7 @@ class CameFancoilClimateEntity(CameClimateEntity):
         self._attr_supported_features |= ClimateEntityFeature.FAN_MODE
         self._attr_fan_modes = ["auto", "low", "medium", "high"]
         _LOGGER.info(
-            "🎛️ Fan coil %s: modalità disponibili %s", device.name, self._attr_fan_modes
+            "🎛️ Fan coil %s: available modes %s", device.name, self._attr_fan_modes
         )
 
     @property
@@ -219,28 +222,24 @@ class CameFancoilClimateEntity(CameClimateEntity):
 
     @property
     def fan_mode(self) -> Optional[str]:
-        # Legge la velocità attuale dal dispositivo
+        # Reads the current speed from the device
         fan_mode = getattr(self._device, "fan_mode", None)
         if fan_mode is not None:
-            # Normalizza in minuscolo per Home Assistant
+            # Normalize to lowercase for Home Assistant
             return fan_mode.lower()
         return None
 
-    def set_fan_mode(self, fan_mode: str) -> None:
-        _LOGGER.info("🔁 Cambio velocità ventilatore: richiesta %s", fan_mode)
-        if fan_mode in self._attr_fan_modes:
-            if hasattr(self._device, "set_fan_speed"):
-                # Invia al dispositivo il fan_mode in MAIUSCOLO (perché CAME usa MAIUSCOLO)
-                self._device.set_fan_speed(fan_mode.upper())
-            else:
-                _LOGGER.warning(
-                    "⛔ Il dispositivo %s NON supporta set_fan_speed", self._device.name
-                )
-        else:
-            _LOGGER.warning("🚫 Modalità ventilatore non valida: %s", fan_mode)
-
     async def async_set_fan_mode(self, fan_mode: str) -> None:
         """Set fan mode asynchronously."""
-        _LOGGER.info("🔁 [ASYNC] Cambio velocità ventilatore: richiesta %s", fan_mode)
-        await self.hass.async_add_executor_job(self.set_fan_mode, fan_mode)
-        self.async_write_ha_state()
+        _LOGGER.info("🔁 Changing fan speed: requested %s", fan_mode)
+        if fan_mode in self._attr_fan_modes:
+            if hasattr(self._device, "set_fan_speed"):
+                # Send to the device the fan_mode in UPPERCASE (because CAME uses UPPERCASE)
+                await self._device.set_fan_speed(fan_mode.upper())
+            else:
+                _LOGGER.warning(
+                    "⛔ Device %s does NOT support set_fan_speed", self._device.name
+                )
+        else:
+            _LOGGER.warning("🚫 Invalid fan mode: %s", fan_mode)
+        await self.async_write_ha_state()

@@ -131,7 +131,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class CameScenarioEntity(Scene):
-    """Rappresentazione di uno scenario CAME."""
+    """Representation of a CAME scenario."""
 
     def __init__(self, scenario, manager: CameManager):
         self._manager = manager
@@ -152,7 +152,6 @@ class CameScenarioEntity(Scene):
                 raise                 
             self.async_write_ha_state()
             # Dopo 2 secondi, invia il segnale per rinfrescare gli scenari
-            await asyncio.sleep(2)
             from homeassistant.helpers.dispatcher import async_dispatcher_send
             async_dispatcher_send(self.hass, "came_scenarios_refreshed")          
             

@@ -7,11 +7,9 @@ from .base import TYPE_GENERIC_RELAY, CameDevice, DeviceState
 
 _LOGGER = logging.getLogger(__name__)
 
-
 # relay states
 GENERIC_RELAY_STATE_OFF = 0
 GENERIC_RELAY_STATE_ON = 1
-
 
 
 class CameRelay(CameDevice):
@@ -22,7 +20,7 @@ class CameRelay(CameDevice):
         super().__init__(manager, TYPE_GENERIC_RELAY, device_info)
 
 
-    def switch(self, state: int = None):
+    async def switch(self, state: int = None):
         """Switch relay to new state."""
         if state is None:
             raise ValueError("At least one parameter is required")
@@ -41,17 +39,18 @@ class CameRelay(CameDevice):
 
         _LOGGER.debug('Set new state for relay "%s": %s', self.name, log)
 
-        self._manager.application_request(cmd)
+        await self._manager.application_request(cmd)
 
-    def turn_off(self):
+    async def turn_off(self):
         """Turn off relay."""
-        self.switch(GENERIC_RELAY_STATE_OFF)
+        await self.switch(GENERIC_RELAY_STATE_OFF)
 
-    def turn_on(self):
+    async def turn_on(self):
         """Turn on relay."""
-        self.switch(GENERIC_RELAY_STATE_ON)
+        await self.switch(GENERIC_RELAY_STATE_ON)
 
 
-    def update(self):
+    async def update(self):
         """Update device state."""
-        self._force_update("relay")
+        _LOGGER.debug('Updating state for relay "%s"', self.name)
+        await self._force_update("relay")

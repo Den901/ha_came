@@ -108,9 +108,9 @@ class CameEnergySensorEntity(CameEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_native_unit_of_measurement = "W"
 
-    def update(self):
+    async def async_update(self):
         """Update the energy sensor entity."""
-        self._device.update()
+        await self._device.update()
 
     @property
     def native_value(self) -> StateType:
@@ -146,7 +146,7 @@ class CameEnergyTotalSensorEntity(CameEntity, SensorEntity):
         self._last_time = None
         self._energy_total = 0.0
 
-    def update(self):
+    async def async_update(self):
         now = dt_util.utcnow()
         power = self._source_entity.native_value
         if self._last_time is not None and isinstance(power, (int, float)):
