@@ -10,9 +10,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 # opening states
-OPENING_STATE_STOPED = 0
-OPENING_STATE_OPENNING = 1
-OPENING_STATE_CLOSING = 2
+OPENING_STATE_STOP = 0
+OPENING_STATE_OPEN = 1
+OPENING_STATE_CLOSE = 2
+
+
+
 
 #   "wanted_status" : <0/1/2/3/4>  // stop/open/close/slat open/slat close OR
 
@@ -25,7 +28,7 @@ class CameOpening(CameDevice):
         super().__init__(manager, TYPE_OPENING, device_info)
 
 
-    async def opening(self, state: int = None):
+    def opening(self, state: int = None):
         """Switch opening to new state."""
         if state is None:
             raise ValueError("At least one parameter is required")
@@ -44,11 +47,11 @@ class CameOpening(CameDevice):
 
         _LOGGER.debug('Set new state for the opening "%s": %s', self.name, log)
 
-        await self._manager.application_request(cmd)
+        self._manager.application_request(cmd)
 
-    async def open(self): #APERTURA
+    def open(self): #APERTURA
         """Open the window."""
-        await self.opening(OPENING_STATE_OPENNING)
+        self.opening(OPENING_STATE_OPEN)
 
     @property
     def act_id(self) -> Optional[int]:
@@ -60,16 +63,15 @@ class CameOpening(CameDevice):
         if not self.act_id:
             raise ETIDomoUnmanagedDeviceError()
 
-    async def close(self): #CHIUSURA
+    def close(self): #CHIUSURA
         """Close the window."""
-        await self.opening(OPENING_STATE_CLOSING)
+        self.opening(OPENING_STATE_CLOSE)
 
-    async def stop(self): #STOP
+    def stop(self): #STOP
         """Stop the window."""
-        await self.opening(OPENING_STATE_STOPED)
+        self.opening(OPENING_STATE_STOP)
 
 
-    async def update(self):
+    def update(self):
         """Update device state."""
-        _LOGGER.debug('Updating state for opening "%s"', self.name)
-        await self._force_update("openings")
+        self._force_update("opening")

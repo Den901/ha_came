@@ -55,24 +55,12 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-
-# Allow optional per-cover travel durations in config
 ACCOUNT_SCHEMA = vol.Schema(
     {
-        vol.Optional(CONF_HOST): cv.string,
-        vol.Optional(CONF_USERNAME): cv.string,
-        vol.Optional(CONF_PASSWORD): cv.string,
-        vol.Optional(CONF_TOKEN): cv.string,
-        vol.Optional("covers"): vol.Schema(
-            {
-                cv.string: vol.Schema(
-                    {
-                        vol.Optional("opening_travel_duration"): vol.Coerce(float),
-                        vol.Optional("closing_travel_duration"): vol.Coerce(float),
-                    }
-                )
-            }
-        ),
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Required(CONF_TOKEN): cv.string,
     }
 )
 
@@ -126,47 +114,53 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass=hass
     )
 
-    async def initial_update():
-        await manager.get_all_floors()
-        await manager.get_all_rooms()
-        return await manager.get_all_devices()
+    def initial_update():
+        manager.get_all_floors()
+        manager.get_all_rooms()
+        return manager.get_all_devices()
 
     try:
-        devices = await initial_update()
+        devices = await hass.async_add_executor_job(initial_update)
     except ETIDomoConnectionTimeoutError as exc:
         raise ConfigEntryNotReady from exc
 
+    # Crea evento di stop per thread e polling
+    stop_event = threading.Event()
 
-    # Create stop event for polling
-    stop_event = asyncio.Event()
-
-    async def _came_update_listener():
-        """Async task that listens for device updates in a loop."""
+    def _came_update_listener(hass: HomeAssistant, manager: CameManager, stop_event: threading.Event):
+        """Thread che ascolta gli aggiornamenti dei dispositivi in loop."""
         while not stop_event.is_set():
             try:
-                if await manager.status_update():
+                if manager.status_update():
+                    _LOGGER.debug("Received devices status update.")
                     dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
             except ETIDomoConnectionError:
                 _LOGGER.debug("Server goes offline. Reconnecting...")
-            await asyncio.sleep(1)  # to avoid too fast loop
+            sleep(1)  # per evitare ciclo troppo veloce
 
-    update_task = hass.loop.create_task(_came_update_listener())
+    thread = threading.Thread(
+        target=_came_update_listener, args=(hass, manager, stop_event), daemon=True
+    )
 
     hass.data[DOMAIN] = {
         CONF_MANAGER: manager,
         CONF_ENTITIES: {},
         CONF_ENTRY_IS_SETUP: set(),
         CONF_PENDING: {},
-        CONF_CAME_LISTENER: update_task,
+        CONF_CAME_LISTENER: thread,
         "stop_event": stop_event,
-        "energy_polling_task": None,  # will be set later
+        "energy_polling_task": None,  # sarà settato dopo
     }
 
     hass.data[DOMAIN]["came_scenario_manager"] = manager.scenario_manager
 
+    thread.start()
+
 
     async def async_energy_polling(hass: HomeAssistant, manager: CameManager, stop_event: threading.Event):
-        """Async polling for energy data."""
+        """Polling async per i dati energia."""
+       
+
         try:
             while not stop_event.is_set():
                 try:
@@ -176,13 +170,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                             {"cmd_name": "meters_list_req"},
                             "meters_list_resp",
                         ),
-                        timeout=5.0  # 5 second timeout for the call
+                        timeout=5.0  # Timeout di 5 secondi per la chiamata
                     )
                 except asyncio.TimeoutError:
-                    _LOGGER.warning("Timeout during energy data request")
+                    _LOGGER.warning("Timeout durante richiesta dati energia")
                     response = None
                 except Exception as exc:
-                    _LOGGER.warning("Error during energy data request: %s", exc)
+                    _LOGGER.warning("Errore durante richiesta dati energia: %s", exc)
                     response = None
 
                 if response:
@@ -196,10 +190,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                         async_dispatcher_send(hass, SIGNAL_UPDATE_ENTITY)
                 await asyncio.sleep(10)
         except asyncio.CancelledError:
-            _LOGGER.debug("Energy polling cancelled")
+            _LOGGER.debug("Polling energia cancellato")
             raise
         except Exception as e:
-            _LOGGER.warning("Error in energy polling: %s", e)
+            _LOGGER.warning("Errore nel polling energia: %s", e)
 
 
 
@@ -216,14 +210,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 dev_types.setdefault(ha_type, [])
                 dev_types[ha_type].append(device.unique_id)
                 hass.data[DOMAIN][CONF_ENTITIES][device.unique_id] = None
-
+        _LOGGER.info("Tipi rilevati per piattaforme HA: %s", list(dev_types.keys()))
         for ha_type, dev_ids in dev_types.items():
             config_entries_key = f"{ha_type}.{DOMAIN}"
             if config_entries_key not in hass.data[DOMAIN][CONF_ENTRY_IS_SETUP]:
                 hass.data[DOMAIN][CONF_PENDING][ha_type] = dev_ids
-                
-                # MODIFIED: Use `await` to wait for the device type setup.
-                # MODIFIED: Use `async_forward_entry_setups` for compliance
+                _LOGGER.debug("Avvio setup per entità Home Assistant: %s", ha_type)
+                # MODIFICATO: Usa `await` per attendere la configurazione del tipo di dispositivo.
+                # MODIFICATO: Usa `async_forward_entry_setups` per conformità
                 await hass.config_entries.async_forward_entry_setups(entry, [ha_type])
                 
                 hass.data[DOMAIN][CONF_ENTRY_IS_SETUP].add(config_entries_key)
@@ -260,9 +254,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.services.async_register(DOMAIN, SERVICE_FORCE_UPDATE, async_force_update)
 
-    # Start async energy polling and save task in hass.data
+    # Avvia polling energia async e salva task in hass.data
     async def start_energy_polling(_):
-        await asyncio.sleep(5)  # Delay start by 5 seconds
+        await asyncio.sleep(5)  # Ritarda l'inizio di 5 secondi
         hass.data[DOMAIN]["energy_polling_task"] = hass.async_create_task(
             async_energy_polling(hass, manager, stop_event)
         )
@@ -272,7 +266,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def async_refresh_scenarios_service(call):
         _LOGGER.debug("Servizio refresh_scenarios chiamato")
         scenario_manager = hass.data[DOMAIN]["came_scenario_manager"]
-        await scenario_manager.refresh_scenarios()
+        await hass.async_add_executor_job(scenario_manager.refresh_scenarios)
         _LOGGER.debug("refresh_scenarios completato, invio evento 'came_scenarios_refreshed'")
         dispatcher_send(hass, "came_scenarios_refreshed")
 

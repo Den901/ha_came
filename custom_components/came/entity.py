@@ -35,7 +35,7 @@ class CameEntity(Entity):
         """Init."""
         self._device = device
 
-        self._attr_should_poll = True
+        self._attr_should_poll = False
         self._attr_unique_id = f"{DOMAIN}_{self._device.unique_id}"
         self._attr_name = self._device.name
         self._attr_device_info = {
@@ -68,7 +68,7 @@ class CameEntity(Entity):
         }
 
     @callback
-    async def _update_callback(self):
+    def _update_callback(self):
         """Call update method."""
         self.async_schedule_update_ha_state(True)
 
