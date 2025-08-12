@@ -70,18 +70,13 @@ class CameSwitchEntity(CameEntity, SwitchEntity):
         """Return true if relay is on."""
         return self._device.state == GENERIC_RELAY_STATE_ON
 
-    async def async_turn_on(self, **kwargs):
+    def turn_on(self, **kwargs):
         """Turn on or control the relay."""
         _LOGGER.debug("Turn on relay %s", self.entity_id)
-        await self._device.turn_on()
+        self._device.turn_on()
 
 
-    async def async_turn_off(self, **kwargs):
+    def turn_off(self, **kwargs):
         """Instruct the relay to turn off."""
         _LOGGER.debug("Turn off relay %s", self.entity_id)
-        await self._device.turn_off()
-
-    async def async_update(self):
-        """Fetch new state data for this switch from the device."""
-        _LOGGER.debug("update called for %s", self.entity_id)
-        await self._device.update()
+        self._device.turn_off()

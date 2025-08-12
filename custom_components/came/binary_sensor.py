@@ -24,20 +24,13 @@ async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ):
     """Set up CAME digitalin devices dynamically through discovery."""
-    from .const import DOMAIN, CONF_MANAGER
-    manager = hass.data[DOMAIN][CONF_MANAGER]
 
     async def async_discover_sensor(dev_ids):
         """Discover and add a discovered CAME digitalin devices."""
         if not dev_ids:
             return
 
-        devices = []
-        for dev_id in dev_ids:
-            device = await manager.get_device_by_id(dev_id)
-            if device:
-                devices.append(device)
-        entities = await hass.async_add_executor_job(_setup_entities, hass, devices)
+        entities = await hass.async_add_executor_job(_setup_entities, hass, dev_ids)
         async_add_entities(entities)
 
     async_dispatcher_connect(
@@ -48,11 +41,14 @@ async def async_setup_entry(
     await async_discover_sensor(devices_ids)
 
 
-def _setup_entities(hass, devices):
+def _setup_entities(hass, dev_ids: List[str]):
     """Set up CAME digitalin device."""
     manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
     entities = []
-    for device in devices:
+    for dev_id in dev_ids:
+        device = manager.get_device_by_id(dev_id)
+        if device is None:
+            continue
         entities.append(CameDigitalInEntity(device))
     return entities
 
@@ -69,8 +65,3 @@ class CameDigitalInEntity(CameEntity, BinarySensorEntity):
     def is_on(self):
         """Return true if light is on."""
         return self._device.state == BINARY_SENSOR_STATE_OFF
-
-    async def async_update(self):
-        """Fetch new state data for this digitalIn from the device."""
-        _LOGGER.debug("update called for %s", self.entity_id)
-        await self._device.update()

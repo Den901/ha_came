@@ -27,10 +27,10 @@ class CameEnergySensor(CameDevice):
         self._update_cmd_base = update_cmd_base
         self._update_src_field = update_src_field
 
-    async def update(self):
+    def update(self):
         """Update device state."""
         try:
-            await self._force_update(self._update_cmd_base, self._update_src_field)
+            self._force_update(self._update_cmd_base, self._update_src_field)
         except ETIDomoUnmanagedDeviceError:
             pass
 
