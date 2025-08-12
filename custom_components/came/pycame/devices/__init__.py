@@ -16,7 +16,7 @@ from .came_scenarios import ScenarioDevice
 
 _LOGGER = logging.getLogger(__name__)
 
-def get_featured_devices(manager, feature: str) -> List[CameDevice]:
+async def get_featured_devices(manager, feature):
     """Get device implementations for the given feature."""
     devices = []
 
@@ -49,7 +49,7 @@ def get_featured_devices(manager, feature: str) -> List[CameDevice]:
         "cmd_name": cmd_name,
         "topologic_scope": "plant",
     }
-    response = manager.application_request(cmd, response_name)
+    response = await manager.application_request(cmd, response_name)
 
     for device_info in response.get("array", []):
         if feature == "lights":

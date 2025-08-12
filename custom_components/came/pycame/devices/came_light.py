@@ -142,7 +142,7 @@ class CameLight(CameDevice):
         else:
             self.switch(brightness=brightness)
 
-    def switch(self, state: int = None, brightness: int = None, rgb: List[int] = None):
+    async def switch(self, state: int = None, brightness: int = None, rgb: List[int] = None):
         """Switch light to new state."""
         if state is None and brightness is None and rgb is None:
             raise ValueError("At least one parameter is required")
@@ -164,20 +164,21 @@ class CameLight(CameDevice):
 
         _LOGGER.debug('Set new state for light "%s": %s', self.name, log)
 
-        self._manager.application_request(cmd)
+        await self._manager.application_request(cmd)
 
-    def turn_off(self):
+    async def turn_off(self):
         """Turn off light."""
-        self.switch(LIGHT_STATE_OFF)
+        await self.switch(LIGHT_STATE_OFF)
 
-    def turn_on(self):
+    async def turn_on(self):
         """Turn on light."""
-        self.switch(LIGHT_STATE_ON)
+        await self.switch(LIGHT_STATE_ON)
 
-    def turn_auto(self):
+    async def turn_auto(self):
         """Switch light to automatic mode."""
-        self.switch(LIGHT_STATE_AUTO)
+        await self.switch(LIGHT_STATE_AUTO)
 
-    def update(self):
+    async def update(self):
         """Update device state."""
-        self._force_update("light")
+        _LOGGER.debug('Updating state for light "%s"', self.name)
+        await self._force_update("light")

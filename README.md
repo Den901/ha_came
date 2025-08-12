@@ -81,6 +81,39 @@ came:
   _(string) (Required)_\
   The special token to access to API.
 
+## Cover Custom Configuration
+
+For covers (shutters/blinds), you can customize the travel duration for opening and closing operations. This allows for more accurate position control when the default timings don't match your device's actual behavior.
+
+```yaml
+# Example configuration.yaml entry with cover customization
+came:
+  covers:
+    1-01234566789abcdef01234566789abcdef012345:
+      opening_travel_duration: 27   # seconds
+      closing_travel_duration: 23
+    1-abcdef01234566789abcdef01234501234566789:
+      opening_travel_duration: 30
+      closing_travel_duration: 28
+```
+
+### Cover Configuration Variables
+
+**covers**:\
+  _(map) (Optional)_\
+  A map of cover device IDs with their custom configuration.
+  If your ha entity id is `cover.came_1_01234566789abcdef01234566789abcdef`, then the id you should specify is `1-01234566789abcdef01234566789abcdef012345`
+
+**opening_travel_duration**:\
+  _(integer) (Optional)_\
+  The time in seconds it takes for the cover to fully open.
+  Default to 27
+
+**closing_travel_duration**:\
+  _(integer) (Optional)_\
+  The time in seconds it takes for the cover to fully close.
+  Default to 23
+
 ## Service
 
 These services are available for the `came` component:
@@ -89,6 +122,8 @@ These services are available for the `came` component:
 - pull_devices
 
 Devices state data and new devices will refresh automatically. If you want to refresh all devices information or get new devices related to your account manually, you can call the `force_update` or `pull_devices` service.
+
+
 
 ## Track updates
 

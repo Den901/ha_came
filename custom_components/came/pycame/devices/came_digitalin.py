@@ -25,9 +25,9 @@ class CameDigitalIn(CameDevice):
         super().__init__(
             manager, TYPE_DIGITALIN, device_info, device_class=device_class)
 
-    def update(self):
+    async def update(self):
         """Update device state."""
-        self._force_update(self._update_cmd_base, self._update_src_field)
+        await self._force_update(self._update_cmd_base, self._update_src_field)
 
 
     @property

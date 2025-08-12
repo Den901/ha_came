@@ -159,8 +159,8 @@ class CameDevice(ABC):
 
         return bool(log)
 
-    def _force_update(self, cmd_base: str, field: str = "array"):
-        """Force update device state."""
+    async def _force_update(self, cmd_base: str, field: str = "array"):
+        """Force update device state asynchronously."""
         self._check_act_id()
 
         cmd = {
@@ -168,9 +168,8 @@ class CameDevice(ABC):
             "topologic_scope": "act",
             "value": self.act_id,
         }
-        res = self._manager.application_request(cmd, f"{cmd_base}_list_resp").get(
-            field, []
-        )
+        res = await self._manager.application_request(cmd, f"{cmd_base}_list_resp")
+        res = res.get(field, [])
         if not isinstance(res, list):
             res = [res]
         for device_info in res:  # type: DeviceState
@@ -179,7 +178,7 @@ class CameDevice(ABC):
                 return
 
     @abstractmethod
-    def update(self):
+    async def update(self):
         """Update device state."""
         raise NotImplementedError
 
