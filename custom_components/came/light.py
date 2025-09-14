@@ -4,12 +4,9 @@ from typing import List
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
-from homeassistant.components.light import (
-    ENTITY_ID_FORMAT,
-    SUPPORT_BRIGHTNESS,
-    SUPPORT_COLOR,
-    LightEntity,
-)
+from homeassistant.components.light import LightEntityFeature
+from homeassistant.components.light import ENTITY_ID_FORMAT, LightEntity
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -65,27 +62,27 @@ class CameLightEntity(CameEntity, LightEntity):
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
 
         # Debug: Log delle funzionalità supportate dal dispositivo
+        support_brightness = getattr(self._device, 'support_brightness', False)
+        support_color = getattr(self._device, 'support_color', False)
+
         _LOGGER.debug(
             f"Initializing light entity {self.entity_id}. "
-            f"Support brightness: {getattr(self._device, 'support_brightness', False)}, "
-            f"Support color: {getattr(self._device, 'support_color', False)}"
+            f"Support brightness: {support_brightness}, Support color: {support_color}"
         )
 
-        # Imposta le funzionalità supportate
-        self._attr_supported_features = 0  # Inizialmente nessuna funzionalità supportata
+        # Definisci solo i supported_color_modes (richiesto da HA 2025.3)
+        if support_color:
+            self._attr_supported_color_modes = {"hs"}
+        elif support_brightness:
+            self._attr_supported_color_modes = {"brightness"}
+        else:
+            self._attr_supported_color_modes = {"onoff"}
 
-        # Aggiungi supporto per la luminosità solo se esplicitamente richiesto
-        if getattr(self._device, 'support_brightness', False):
-            self._attr_supported_features |= SUPPORT_BRIGHTNESS
-
-        # Aggiungi supporto per il colore solo se esplicitamente richiesto
-        if getattr(self._device, 'support_color', False):
-            self._attr_supported_features |= SUPPORT_COLOR
-
-        # Debug: Log delle funzionalità finali
+        # Debug finale
         _LOGGER.debug(
-            f"Final supported features for {self.entity_id}: {self._attr_supported_features}"
+            f"Final supported color modes for {self.entity_id}: {self._attr_supported_color_modes}"
         )
+
 
     @property
     def is_on(self):
@@ -93,26 +90,45 @@ class CameLightEntity(CameEntity, LightEntity):
         return self._device.state == LIGHT_STATE_ON
 
     def turn_on(self, **kwargs):
-        """Turn on or control the light."""
-        _LOGGER.debug("Turn on light %s", self.entity_id)
+        """Turn on or control the light senza bloccare HA."""
+        _LOGGER.debug("[DEBUG DIMMER] %s → richiesto turn_on con brightness=%s",
+                        self.entity_id, kwargs.get(ATTR_BRIGHTNESS))
 
-        # Controlla se il dispositivo supporta la luminosità e se è stato passato un valore
+        brightness_pct = None
         if ATTR_BRIGHTNESS in kwargs and hasattr(self._device, 'set_brightness'):
-            brightness = kwargs[ATTR_BRIGHTNESS]
-            self._device.set_brightness(round(brightness * 100 / 255))  # Converti da 0-255 a 0-100
+            brightness_pct = round(kwargs[ATTR_BRIGHTNESS] * 100 / 255)
 
-        # Controlla se il dispositivo supporta il colore e se è stato passato un valore
-        if ATTR_HS_COLOR in kwargs and hasattr(self._device, 'set_hs_color'):
-            hs_color = kwargs[ATTR_HS_COLOR]
-            self._device.set_hs_color(hs_color)
-
-        # Se non ci sono comandi specifici, accendi semplicemente la luce
-        if not kwargs:
+        if self._device.state == LIGHT_STATE_ON:
+            # Luce già accesa → applico subito brightness
+            if brightness_pct is not None:
+                self._device.set_brightness(brightness_pct)
+                _LOGGER.debug("[DEBUG DIMMER] %s → luce già ON, applico subito brightness %s",
+                              self.entity_id, brightness_pct)
+        else:
+            # Luce spenta → prima ON, poi brightness al prossimo update
+            self._pending_brightness = brightness_pct
             self._device.turn_on()
+            _LOGGER.debug("[DEBUG DIMMER] %s → comando turn_on inviato,"
+                          " attendo conferma ETI per applicare brightness %s",
+                          self.entity_id, brightness_pct)
+
+        # Aggiorno subito HA (UI reattiva)
+        self.schedule_update_ha_state()
+        
+    def update(self):
+        """Aggiornamento dello stato dal device."""
+        if getattr(self, "_pending_brightness", None) is not None and self._device.state == LIGHT_STATE_ON:
+            _LOGGER.debug("[DEBUG DIMMER] %s → ETI ha confermato ON, applico brightness %s",
+                          self.entity_id, self._pending_brightness)
+            self._device.set_brightness(self._pending_brightness)
+            self._pending_brightness = None
+        
+
 
     def turn_off(self, **kwargs):
         """Instruct the light to turn off."""
         _LOGGER.debug("Turn off light %s", self.entity_id)
+        self._pending_brightness = None
         self._device.turn_off()
 
     @property
@@ -130,3 +146,13 @@ class CameLightEntity(CameEntity, LightEntity):
         if not hasattr(self._device, 'hs_color') or not getattr(self._device, 'support_color', False):
             return None
         return tuple(self._device.hs_color)
+        
+    @property
+    def color_mode(self):
+        """Return the current color mode of the light."""
+        if getattr(self._device, 'support_color', False):
+            return "hs"
+        elif getattr(self._device, 'support_brightness', False):
+            return "brightness"
+        else:
+            return "onoff"
