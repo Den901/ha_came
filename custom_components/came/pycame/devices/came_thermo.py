@@ -41,6 +41,7 @@ class CameThermo(CameDevice):
     def __init__(self, manager, device_info: DeviceState):
         """Init instance."""
         super().__init__(manager, TYPE_THERMOSTAT, device_info)
+        #self.raw_zone = device_info
 
     @property
     def mode(self) -> Optional[int]:
@@ -191,3 +192,65 @@ class CameThermo(CameDevice):
                 self.name,
                 e,
             )
+          
+    @property
+    def t1(self) -> Optional[int]:
+        return self._device_info.get("t1")
+
+    @property
+    def t2(self) -> Optional[int]:
+        return self._device_info.get("t2")
+
+    @property
+    def t3(self) -> Optional[int]:
+        return self._device_info.get("t3")
+
+    @property
+    def reason(self) -> Optional[int]:
+        return self._device_info.get("reason")
+        
+    @property
+    def floor_ind(self) -> Optional[int]:
+        return self._device_info.get("floor_ind")
+
+    @property
+    def room_ind(self) -> Optional[int]:
+        return self._device_info.get("room_ind")
+
+    @property
+    def temp_dec(self) -> Optional[int]:
+        return self._device_info.get("temp_dec")
+
+    @property
+    def set_point(self) -> Optional[int]:
+        return self._device_info.get("set_point")
+
+    @property
+    def antifreeze(self) -> Optional[int]:
+        return self._device_info.get("antifreeze")
+
+    @property
+    def f3a(self) -> Optional[dict]:
+        return self._device_info.get("f3a")
+
+    @property
+    def thermo_algo(self) -> Optional[dict]:
+        return self._device_info.get("thermo_algo")
+        
+    @property
+    def status(self) -> Optional[int]:
+        return self._device_info.get("status")
+
+    @property
+    def antifreeze(self) -> Optional[int]:
+        return self._device_info.get("antifreeze")        
+        
+    @property
+    def fan_mode_ha(self) -> str:
+        """Velocità nel linguaggio di HA (minuscolo)."""
+        return self.fan_mode.lower()
+
+    def set_fan_mode_ha(self, mode: str) -> None:
+        """Accetta nomi HA (low/medium/high/auto) → chiama set_fan_speed."""
+        self.set_fan_speed(mode.upper())    
+        
