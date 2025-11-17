@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 from homeassistant.util.unit_system import PRESSURE_UNITS, TEMPERATURE_UNITS
@@ -125,7 +126,7 @@ class CameEnergySensorEntity(CameEntity, SensorEntity):
         """Return the extra attributes."""
         return self._device.extra_state_attributes or {}
 
-class CameEnergyTotalSensorEntity(CameEntity, SensorEntity):
+class CameEnergyTotalSensorEntity(CameEntity, SensorEntity, RestoreEntity):
     """Sensor that integrates power to compute energy."""
 
     def __init__(self, source_entity: CameEnergySensorEntity, produced: int = 0):
@@ -145,6 +146,16 @@ class CameEnergyTotalSensorEntity(CameEntity, SensorEntity):
         self._attr_native_unit_of_measurement = "kWh"
         self._last_time = None
         self._energy_total = 0.0
+
+    async def async_added_to_hass(self):
+        """Restore energy value after Home Assistant restart."""
+        await super().async_added_to_hass()
+        state = await self.async_get_last_state()
+        if state and state.state not in (None, "unknown", "unavailable"):
+            try:
+                self._energy_total = float(state.state)
+            except (ValueError, TypeError):
+                self._energy_total = 0.0
 
     def update(self):
         now = dt_util.utcnow()
