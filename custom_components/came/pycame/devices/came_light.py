@@ -34,8 +34,6 @@ class CameLight(CameDevice):
     @property
     def support_color(self) -> bool:
         """Return True if light support color as HS values."""
-        # pylint: disable=fixme
-        # todo: Which type is correct? "RGB" or "rgb"
         return self.light_type.upper() == LIGHT_TYPE_RGB
 
     @property
@@ -103,10 +101,15 @@ class CameLight(CameDevice):
                 )
             )
 
+    def set_color(self, hs: List[float]) -> None:
+        """Public wrapper to set HS color (used by HA)."""
+        _LOGGER.debug("CameLight.set_hs_color called with: %s", hs)
+        self.set_hs_color(hs)
+
     @property
     def support_brightness(self) -> bool:
         """Return True if light support brightness in percents."""
-        return self.light_type in (LIGHT_TYPE_DIMMER, LIGHT_TYPE_RGB)
+        return self.light_type.upper() in (LIGHT_TYPE_DIMMER, LIGHT_TYPE_RGB)
 
     @property
     def brightness(self) -> int:
@@ -114,11 +117,14 @@ class CameLight(CameDevice):
         if self.support_color:
             return self._hsv_color[2]
 
-        return self._device_info.get("perc", 100)  # Applicable only for dimmers
+        return self._device_info.get("perc", 100)
 
     def set_brightness(self, brightness: int):
         """Set light brightness in percents."""
+        _LOGGER.debug("CameLight.set_brightness called with: %s", brightness)
+        _LOGGER.debug("Current device state before brightness change: %s", self._device_info)
         if not self.support_brightness:
+            _LOGGER.debug("Brightness not supported for this device")
             return
 
         if brightness < 0:
@@ -128,6 +134,7 @@ class CameLight(CameDevice):
 
         if self.support_color:
             hsv = self._hsv_color
+            _LOGGER.debug("Current HSV before change: %s", hsv)
             self.switch(
                 rgb=list(
                     map(
@@ -138,9 +145,12 @@ class CameLight(CameDevice):
                     )
                 )
             )
-
+            _LOGGER.debug("Brightness set via RGB conversion")
         else:
             self.switch(brightness=brightness)
+            _LOGGER.debug("Brightness set directly for dimmer")
+        _LOGGER.debug("Device state after brightness change: %s", self._device_info)
+
 
     def switch(self, state: int = None, brightness: int = None, rgb: List[int] = None):
         """Switch light to new state."""

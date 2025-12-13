@@ -1,12 +1,13 @@
 """Support for the CAME lights."""
-import logging
+import asyncio
 from typing import List
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ATTR_HS_COLOR
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
-from homeassistant.components.light import LightEntityFeature
-from homeassistant.components.light import ENTITY_ID_FORMAT, LightEntity
-
+from homeassistant.components.light import (
+    ENTITY_ID_FORMAT,
+    LightEntity,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
@@ -17,16 +18,11 @@ from .pycame.devices.came_light import LIGHT_STATE_ON
 from .const import CONF_MANAGER, CONF_PENDING, DOMAIN, SIGNAL_DISCOVERY_NEW
 from .entity import CameEntity
 
-_LOGGER = logging.getLogger(__name__)
-
 
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities
 ):
-    """Set up CAME light devices dynamically through discovery."""
-
     async def async_discover_sensor(dev_ids):
-        """Discover and add a discovered CAME light devices."""
         if not dev_ids:
             return
 
@@ -42,8 +38,7 @@ async def async_setup_entry(
 
 
 def _setup_entities(hass, dev_ids: List[str]):
-    """Set up CAME light device."""
-    manager = hass.data[DOMAIN][CONF_MANAGER]  # type: CameManager
+    manager = hass.data[DOMAIN][CONF_MANAGER]
     entities = []
     for dev_id in dev_ids:
         device = manager.get_device_by_id(dev_id)
@@ -54,105 +49,167 @@ def _setup_entities(hass, dev_ids: List[str]):
 
 
 class CameLightEntity(CameEntity, LightEntity):
-    """CAME light device entity."""
 
     def __init__(self, device: CameDevice):
-        """Init CAME light device entity."""
         super().__init__(device)
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
 
-        # Debug: Log delle funzionalità supportate dal dispositivo
-        support_brightness = getattr(self._device, 'support_brightness', False)
-        support_color = getattr(self._device, 'support_color', False)
+        # anti-rimbalzo brightness
+        self._pending_brightness = None
 
-        _LOGGER.debug(
-            f"Initializing light entity {self.entity_id}. "
-            f"Support brightness: {support_brightness}, Support color: {support_color}"
-        )
+        # anti-rimbalzo colore
+        self._pending_hs_color = None
 
-        # Definisci solo i supported_color_modes (richiesto da HA 2025.3)
-        if support_color:
-            self._attr_supported_color_modes = {"hs"}
-        elif support_brightness:
-            self._attr_supported_color_modes = {"brightness"}
+        if getattr(self._device, "support_color", False):
+            color_modes = {"hs"}
+        elif getattr(self._device, "support_brightness", False):
+            color_modes = {"brightness"}
         else:
-            self._attr_supported_color_modes = {"onoff"}
+            color_modes = {"onoff"}
 
-        # Debug finale
-        _LOGGER.debug(
-            f"Final supported color modes for {self.entity_id}: {self._attr_supported_color_modes}"
-        )
-
+        self._attr_supported_color_modes = color_modes
 
     @property
     def is_on(self):
-        """Return true if light is on."""
         return self._device.state == LIGHT_STATE_ON
 
-    def turn_on(self, **kwargs):
-        """Turn on or control the light senza bloccare HA."""
-        _LOGGER.debug("[DEBUG DIMMER] %s → richiesto turn_on con brightness=%s",
-                        self.entity_id, kwargs.get(ATTR_BRIGHTNESS))
+    async def _wait_for_on(self, path_label):
+        """
+        Attesa per ETI/Domo: prima che la luce sia disponibile
+        per ricevere comandi (brightness / color).
+        """
+        for step in range(5):
+            if self._device.state == LIGHT_STATE_ON:
+                await asyncio.sleep(0.20)
+                break
 
-        brightness_pct = None
-        if ATTR_BRIGHTNESS in kwargs and hasattr(self._device, 'set_brightness'):
-            brightness_pct = round(kwargs[ATTR_BRIGHTNESS] * 100 / 255)
+            await asyncio.sleep(0.3)
 
-        if self._device.state == LIGHT_STATE_ON:
-            # Luce già accesa → applico subito brightness
-            if brightness_pct is not None:
-                self._device.set_brightness(brightness_pct)
-                _LOGGER.debug("[DEBUG DIMMER] %s → luce già ON, applico subito brightness %s",
-                              self.entity_id, brightness_pct)
-        else:
-            # Luce spenta → prima ON, poi brightness al prossimo update
-            self._pending_brightness = brightness_pct
-            self._device.turn_on()
-            _LOGGER.debug("[DEBUG DIMMER] %s → comando turn_on inviato,"
-                          " attendo conferma ETI per applicare brightness %s",
-                          self.entity_id, brightness_pct)
+    async def async_turn_on(self, **kwargs):
 
-        # Aggiorno subito HA (UI reattiva)
-        self.schedule_update_ha_state()
-        
-    def update(self):
-        """Aggiornamento dello stato dal device."""
-        if getattr(self, "_pending_brightness", None) is not None and self._device.state == LIGHT_STATE_ON:
-            _LOGGER.debug("[DEBUG DIMMER] %s → ETI ha confermato ON, applico brightness %s",
-                          self.entity_id, self._pending_brightness)
-            self._device.set_brightness(self._pending_brightness)
-            self._pending_brightness = None
-        
+        brightness_request = ATTR_BRIGHTNESS in kwargs
+        color_request = ATTR_HS_COLOR in kwargs
 
+        # CASO COMBINATO: COLOR + BRIGHTNESS da automazioni
+        if brightness_request and color_request:
 
-    def turn_off(self, **kwargs):
-        """Instruct the light to turn off."""
-        _LOGGER.debug("Turn off light %s", self.entity_id)
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent = round(brightness * 100 / 255)
+            hs = kwargs[ATTR_HS_COLOR]
+
+            self._pending_brightness = percent
+            self._pending_hs_color = hs
+
+            await self.hass.async_add_executor_job(self._device.turn_on)
+            await self._wait_for_on("combo")
+
+            await self.hass.async_add_executor_job(self._device.set_hs_color, hs)
+
+            await asyncio.sleep(0.6)
+
+            await self.hass.async_add_executor_job(
+                self._device.set_brightness, percent
+            )
+
+            self.async_write_ha_state()
+            return
+
+        # BRIGHTNESS PATH (solo brightness)
+        if brightness_request and hasattr(self._device, "set_brightness"):
+
+            brightness = kwargs[ATTR_BRIGHTNESS]
+            percent = round(brightness * 100 / 255)
+            self._pending_brightness = percent
+
+            await self.hass.async_add_executor_job(self._device.turn_on)
+            await self._wait_for_on("bri")
+
+            await self.hass.async_add_executor_job(self._device.set_brightness, percent)
+
+            self.async_write_ha_state()
+            return
+
+        # COLOR PATH (solo colore)
+        if color_request and hasattr(self._device, "set_hs_color"):
+
+            hs = kwargs[ATTR_HS_COLOR]
+            self._pending_hs_color = hs
+
+            await self.hass.async_add_executor_job(self._device.turn_on)
+            await self._wait_for_on("color")
+
+            await self.hass.async_add_executor_job(self._device.set_hs_color, hs)
+
+            self.async_write_ha_state()
+            return
+
+        # SOLO ACCENSIONE
+        if not kwargs:
+            await self.hass.async_add_executor_job(self._device.turn_on)
+            self.async_write_ha_state()
+            return
+
+    async def async_turn_off(self, **kwargs):
+        await self.hass.async_add_executor_job(self._device.turn_off)
+
         self._pending_brightness = None
-        self._device.turn_off()
+        self._pending_hs_color = None
 
+        self.async_write_ha_state()
+
+    # REFRESH INIZIALE DOPO RIAVVIO HA
+    async def async_added_to_hass(self):
+        await super().async_added_to_hass()
+
+        # Allinea subito la UI al colore reale ETI/Domo
+        self.async_write_ha_state()
+
+    # BRIGHTNESS GETTER
     @property
     def brightness(self):
-        """Return the brightness of the light."""
-        # Verifica se il dispositivo supporta la luminosità
-        if not hasattr(self._device, 'brightness') or not getattr(self._device, 'support_brightness', False):
-            return None
-        return round(self._device.brightness * 255 / 100)  # Converti da 0-100 a 0-255
 
+        real = getattr(self._device, "brightness", None)
+
+        if self._pending_brightness is not None:
+
+            pending_255 = round(self._pending_brightness * 255 / 100)
+            real_255 = None
+            if real is not None:
+                real_255 = round(real * 255 / 100)
+
+            if real_255 == pending_255:
+                self._pending_brightness = None
+                return real_255
+
+            return pending_255
+
+        if real is None or not getattr(self._device, "support_brightness", False):
+            return None
+
+        val = round(real * 255 / 100)
+        return val
+
+    # COLOR GETTER
     @property
     def hs_color(self):
-        """Return the hs_color of the light."""
-        # Verifica se il dispositivo supporta il colore
-        if not hasattr(self._device, 'hs_color') or not getattr(self._device, 'support_color', False):
-            return None
-        return tuple(self._device.hs_color)
-        
+
+        real = getattr(self._device, "hs_color", None)
+
+        if self._pending_hs_color is not None:
+
+            if real == list(self._pending_hs_color):
+                val = tuple(real)
+                self._pending_hs_color = None
+                return val
+
+            return tuple(self._pending_hs_color)
+
+        if real is not None:
+            return tuple(real)
+
+        return None
+
     @property
     def color_mode(self):
-        """Return the current color mode of the light."""
-        if getattr(self._device, 'support_color', False):
-            return "hs"
-        elif getattr(self._device, 'support_brightness', False):
-            return "brightness"
-        else:
-            return "onoff"
+        return next(iter(self._attr_supported_color_modes))
+
