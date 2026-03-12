@@ -113,6 +113,7 @@ class CameManager:
             ) from exception
 
         try:
+            response.encoding = "utf-8"
             resp_json = response.json()
             ack_reason = resp_json.get("sl_data_ack_reason")
 
