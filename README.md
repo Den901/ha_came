@@ -55,6 +55,60 @@ Questa release completa la copertura delle principali famiglie ETI/Domo e prepar
 - TVCC e audio locale.
 - SICU/sicurezza: centrale, aree, ingressi, uscite, scenari, eventi, reset e autenticazione.
 
+## Dettaglio funzionalita'
+
+### Luci
+
+Le luci ETI/Domo vengono pubblicate come entita' `light`. L'integrazione gestisce accensione e spegnimento e, quando il dispositivo lo espone nelle API, anche regolazione intensita' e varianti dimmer/RGB.
+
+### Tapparelle, aperture e cancelli
+
+Le aperture vengono pubblicate come `cover`. Sono pensate per tapparelle, tende, serrande, cancelli e automazioni simili esposte da ETI/Domo. Home Assistant puo' quindi comandare apertura, chiusura e stop quando supportato dal dispositivo.
+
+### Rele'
+
+I rele' generici vengono pubblicati come `switch`. Oltre al comando standard on/off sono disponibili servizi dedicati per attivazione per nome e attivazione temporizzata.
+
+### Ingressi digitali e allarmi tecnici
+
+Gli ingressi digitali vengono pubblicati come `binary_sensor`. Sono utili per stati on/off, contatti, segnalazioni tecniche e allarmi tecnici. Il servizio `came.digitalin_ack` permette di confermare/azzerare un ingresso quando previsto dall'impianto.
+
+### Clima e termoregolazione
+
+Le zone termiche vengono pubblicate come `climate`. L'integrazione legge e aggiorna stato, temperatura, setpoint e modalita' disponibili. Quando ETI/Domo espone sensori collegati alla termoregolazione, vengono aggiunti anche sensori temperatura, umidita' o pressione.
+
+### Sensori analogici
+
+I sensori analogici vengono pubblicati come `sensor`, mantenendo unita' di misura e classe dispositivo quando riconoscibili. Coprono grandezze come temperatura, umidita', pressione o valori analogici personalizzati dell'impianto.
+
+### Energia
+
+I misuratori energia vengono pubblicati come sensori di potenza e come sensori energia in kWh calcolati da Home Assistant. Sono disponibili anche servizi per statistiche energia e reset dello storico misure ETI/Domo.
+
+### Scenari
+
+Gli scenari ETI/Domo vengono pubblicati come `scene`. Puoi attivarli da Home Assistant e usare i servizi per crearli, eliminarli, ricaricarli o attivarli per nome.
+
+### Timer
+
+I timer vengono pubblicati come `switch`. I servizi dedicati permettono di abilitare/disabilitare i giorni della settimana e sostituire la tabella oraria.
+
+### Irrigazione
+
+I settori o programmi irrigazione vengono pubblicati come `switch`, con servizio dedicato per abilitare o disabilitare la schedulazione.
+
+### Controllo carichi
+
+Il controllo carichi espone misuratori come `sensor` e rele' di carico come `switch`, cosi' puoi monitorare consumi e comandare le uscite gestite da ETI/Domo.
+
+### Telecamere TVCC
+
+Le telecamere TVCC configurate in ETI/Domo vengono pubblicate come `camera`, quando presenti nelle API del gateway.
+
+### Audio
+
+Le zone audio/sound room vengono pubblicate come `media_player`, con i controlli disponibili in base a quanto espone ETI/Domo.
+
 ## Sicurezza e antifurto
 
 Le centrali sicurezza vengono ora esposte come entita' `alarm_control_panel`.
@@ -122,14 +176,7 @@ came:
   token: ""
 ```
 
-Puoi usare anche un URL completo:
-
-```yaml
-came:
-  host: http://192.168.1.250/domo/
-  username: installer
-  password: "112233"
-```
+Nel campo `host` puoi usare anche un URL completo, ad esempio `http://192.168.1.250/domo/`, mantenendo le credenziali reali del tuo impianto.
 
 ## Servizi principali
 
