@@ -14,12 +14,12 @@ La libreria `pycame` e' inclusa nel componente: non serve installare pacchetti P
 
 ## Stato della release
 
-Versione corrente: `1.0.8`
+Versione corrente: `1.0.9`
 
 Questa release completa la copertura delle principali famiglie ETI/Domo e prepara il pacchetto per HACS:
 
 - repository aggiornato a `Den901/ha_came`;
-- metadati HACS e manifest allineati alla versione `1.0.8`;
+- metadati HACS e manifest allineati alla versione `1.0.9`;
 - token/keycode opzionale;
 - supporto migliorato per endpoint locali `http://IP/domo/` e `http://IP/domo/test.html`;
 - traduzioni russe obsolete rimosse;
