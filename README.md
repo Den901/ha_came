@@ -1,155 +1,233 @@
-*Please :star: this repo if you find it useful*
+# CAME ETI/Domo per Home Assistant
 
-
-
-![Esempio di Immagine](Came.png)
-***
-
-# CAME integration component
+![CAME ETI/Domo](Came.png)
 
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]][license]
-
-[![hacs][hacs-shield]][hacs]
-
+[![HACS][hacs-shield]][hacs]
 [![Community Forum][forum-shield]][forum]
 
-_The `came` integration is the main integration to integrate CAME related platforms._
+Integrazione custom per collegare Home Assistant agli impianti CAME/BPT ETI/Domo e MiniSER tramite API locale.
 
+La libreria `pycame` e' inclusa nel componente: non serve installare pacchetti Python esterni. La comunicazione avviene in locale verso ETI/Domo, con aggiornamento push/long-polling dove disponibile e polling dedicato per i misuratori energia.
 
+## Stato della release
 
-## Installation
+Versione corrente: `1.0.8`
 
+Questa release completa la copertura delle principali famiglie ETI/Domo e prepara il pacchetto per HACS:
 
+- repository aggiornato a `Den901/ha_came`;
+- metadati HACS e manifest allineati alla versione `1.0.8`;
+- token/keycode opzionale;
+- supporto migliorato per endpoint locali `http://IP/domo/` e `http://IP/domo/test.html`;
+- traduzioni russe obsolete rimosse;
+- nuovo supporto nativo per centrali sicurezza come `alarm_control_panel`.
 
-### Install from HACS (recommended)
+## Piattaforme supportate
 
-1. Have [HACS][hacs] installed, this will allow you to easily manage and track updates.
-2. Add the repo https://github.com/Den901/ha_came to your HACS sources
-3. Search for "CAME".
-4. Click Install below the found integration.
-1. _If you want to configure component via Home Assistant UI..._\
-    in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "CAME".
-1. _If you want to configure component via `configuration.yaml`..._\
-    follow instructions below, then restart Home Assistant.
+| Piattaforma Home Assistant | Dispositivi ETI/Domo |
+| --- | --- |
+| `light` | Luci, dimmer, RGB quando esposti dall'impianto |
+| `cover` | Tapparelle, aperture, tende, cancelli e automazioni di apertura |
+| `climate` | Zone termiche, termostati, modalita', setpoint, umidita'/pressione quando disponibili |
+| `switch` | Rele' generici, timer, irrigazione, rele' controllo carichi |
+| `sensor` | Sensori analogici, misuratori energia, aree sicurezza, contatori controllo carichi |
+| `binary_sensor` | Ingressi digitali, allarmi tecnici, ingressi/uscite sicurezza |
+| `scene` | Scenari ETI/Domo con attivazione da Home Assistant |
+| `camera` | Telecamere TVCC pubblicate da ETI/Domo |
+| `media_player` | Zone audio/sound room |
+| `alarm_control_panel` | Centrali sicurezza SICU/antintrusione |
 
-   note: pycame library is now integrated in the component
->
+## Funzioni principali
 
-### Manual installation
+- Configurazione da interfaccia Home Assistant o da `configuration.yaml`.
+- Login locale con username/password ETI/Domo.
+- Token/keycode opzionale per impianti che lo richiedono.
+- Scoperta automatica di piani, stanze e dispositivi.
+- Aggiornamenti automatici tramite `status_update_req`.
+- Refresh manuale dispositivi e stati tramite servizi Home Assistant.
+- Gestione scenari: attivazione, creazione, cancellazione e refresh.
+- Energia: potenza istantanea, sensore kWh calcolato, statistiche e reset storico.
+- Timer settimanali e abilitazione/disabilitazione giorni.
+- Irrigazione e controllo carichi.
+- TVCC e audio locale.
+- SICU/sicurezza: centrale, aree, ingressi, uscite, scenari, eventi, reset e autenticazione.
 
-1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
-1. If you do not have a `custom_components` directory (folder) there, you need to create it.
-1. In the `custom_components` directory (folder) create a new folder called `came`.
-1. Download file `came.zip` from the [latest release section][releases-latest] in this repository.
-1. Extract _all_ files from this archive you downloaded in the directory (folder) you created.
-1. Restart Home Assistant
-1. _If you want to configure component via Home Assistant UI..._\
-    in the HA UI go to "Configuration" -> "Integrations" click "+" and search for "CAME".
-1. _If you want to configure component via `configuration.yaml`..._\
-    follow instructions below, then restart Home Assistant.
+## Sicurezza e antifurto
 
-## Usage
+Le centrali sicurezza vengono ora esposte come entita' `alarm_control_panel`.
 
-To use this component in your installation, add the following to your `configuration.yaml` file:
+Dal pannello standard Home Assistant puoi:
+
+- vedere lo stato generale della centrale;
+- disinserire tutte le aree;
+- inserire tutte le aree in modalita' `armed_away`;
+- vedere `armed_custom_bypass` quando solo alcune aree risultano inserite.
+
+Per inserimenti parziali o comandi specifici ETI/Domo usa il servizio avanzato:
 
 ```yaml
-# Example configuration.yaml entry
-came:
-  host: YOUR_CAME_HOST
-  username: YOUR_EMAIL
-  password: YOUR_PASSWORD
-  token: RANDOM_STRING
+service: came.sicu_areas_set_status
+data:
+  central_id: 0
+  status_vector: "1103"
+  code: "1234"
 ```
 
-## Configuration variables
+Nel `status_vector` ogni carattere corrisponde a un'area:
 
-**host**:\
-  _(string) (Required)_\
-  The hostname of your ETI/Domo server.
+- `0`: non inserire/disinserita;
+- `1`: inserisci;
+- `2`: inserisci forzata;
+- `3`: lascia invariata.
 
-**username**:\
-  _(string) (Required)_\
-  The username for accessing your account.
+Sono disponibili anche servizi per autenticazione centrale, inclusione/esclusione ingressi, uscite sicurezza, scenari sicurezza, lista eventi e reset allarme.
 
-**password**:\
-  _(string) (Required)_\
-  The password for accessing your account.
+## Installazione da HACS
 
-**token**:\
-  _(string) (Required)_\
-  The special token to access to API.
+1. Installa HACS se non e' gia' presente.
+2. In HACS aggiungi questo repository come custom repository:
+   `https://github.com/Den901/ha_came`
+3. Tipo repository: `Integration`.
+4. Cerca `CAME ETI/Domo`.
+5. Installa l'integrazione.
+6. Riavvia Home Assistant.
+7. Vai in **Impostazioni > Dispositivi e servizi > Aggiungi integrazione** e cerca `CAME`.
 
-## Service
+## Installazione manuale
 
-These services are available for the `came` component:
+1. Scarica `came.zip` dalla sezione [Release][releases-latest].
+2. Estrai il contenuto nella cartella `custom_components/came` della configurazione Home Assistant.
+3. Riavvia Home Assistant.
+4. Aggiungi l'integrazione dalla UI oppure usa la configurazione YAML.
 
-- force_update
-- pull_devices
+## Configurazione
 
-Devices state data and new devices will refresh automatically. If you want to refresh all devices information or get new devices related to your account manually, you can call the `force_update` or `pull_devices` service.
+Configurazione consigliata da UI:
 
-## Track updates
+- Host/IP: ad esempio `192.168.1.250` oppure `http://192.168.1.250`;
+- Username: utente ETI/Domo;
+- Password: password ETI/Domo;
+- Token/keycode: lascia vuoto se l'impianto non lo richiede.
 
-You can automatically track new versions of this component and update it by [HACS][hacs].
+Configurazione YAML alternativa:
 
-## Troubleshooting
-
-To enable debug logs use this configuration:
 ```yaml
-# Example configuration.yaml entry
+came:
+  host: 192.168.1.250
+  username: admin
+  password: admin
+  token: ""
+```
+
+Puoi usare anche un URL completo:
+
+```yaml
+came:
+  host: http://192.168.1.250/domo/
+  username: installer
+  password: "112233"
+```
+
+## Servizi principali
+
+| Servizio | Uso |
+| --- | --- |
+| `came.force_update` | forza l'aggiornamento degli stati |
+| `came.pull_devices` | rilegge la lista dispositivi da ETI/Domo |
+| `came.create_scenario` | crea uno scenario utente |
+| `came.delete_scenario` | elimina uno scenario |
+| `came.refresh_scenarios` | ricarica gli scenari |
+| `came.activate_scenario_by_name` | attiva uno scenario per nome |
+| `came.relay_activation_by_name` | accende/spegne un rele' per nome |
+| `came.relay_timed` | attiva un rele' temporizzato |
+| `came.digitalin_ack` | conferma un ingresso digitale/allarme tecnico |
+| `came.get_datetime` | legge data/ora ETI/Domo e pubblica evento |
+| `came.zoneinfo_list` | legge le timezone disponibili |
+| `came.energy_stat` | richiede statistiche energia |
+| `came.energy_reset_store` | resetta lo storico energia ETI/Domo |
+| `came.timer_enable_day` | abilita/disabilita un giorno timer |
+| `came.timer_set` | sostituisce la tabella oraria timer |
+| `came.irrigation_set_enabled` | abilita/disabilita irrigazione |
+| `came.map_count` | legge il numero mappe |
+| `came.map_descr` | legge la descrizione di una mappa |
+
+Servizi sicurezza:
+
+| Servizio | Uso |
+| --- | --- |
+| `came.sicu_auth` | autentica una centrale sicurezza |
+| `came.sicu_areas_set_status` | imposta il vettore di inserimento aree |
+| `came.sicu_input_set` | include/esclude uno o piu' ingressi |
+| `came.sicu_multi_input_areas_set` | include/esclude ingressi aperti per aree |
+| `came.sicu_output_set` | attiva/disattiva/toggle uscita sicurezza |
+| `came.sicu_scenario_set` | esegue uno scenario sicurezza |
+| `came.sicu_reset` | resetta lo stato allarme |
+| `came.sicu_events_list` | legge eventi sicurezza e pubblica evento |
+| `came.sicu_events_clear` | cancella eventi sicurezza |
+
+## Eventi pubblicati
+
+Alcuni servizi restituiscono la risposta ETI/Domo come evento Home Assistant:
+
+- `came_datetime_response`
+- `came_zoneinfo_response`
+- `came_energy_stat_response`
+- `came_sicu_auth_response`
+- `came_sicu_areas_set_status_response`
+- `came_sicu_input_set_response`
+- `came_sicu_multi_input_areas_set_response`
+- `came_sicu_output_set_response`
+- `came_sicu_scenario_set_response`
+- `came_sicu_reset_response`
+- `came_sicu_events_response`
+- `came_map_count_response`
+- `came_map_descr_response`
+
+## Risoluzione problemi
+
+Abilita i log debug:
+
+```yaml
 logger:
   default: info
   logs:
     custom_components.came: debug
 ```
-... then restart HA.
 
-## Contributions are welcome!
+Suggerimenti rapidi:
 
-This is an active open-source project. We are always open to people who want to
-use the code or contribute to it.
+- Se Home Assistant dice password errata ma la password e' corretta, controlla che ETI/Domo risponda su HTTP/porta 80.
+- Se il token/keycode non e' richiesto dal tuo impianto, lascialo vuoto.
+- Se usi un URL completo, prova sia `http://IP/domo/` sia `http://IP/domo/test.html`.
+- Dopo un aggiornamento firmware ETI/Domo, riavvia Home Assistant e usa `came.pull_devices`.
 
-We have set up a separate document containing our
-[contribution guidelines](CONTRIBUTING.md).
+## Contribuire
 
-Thank you for being involved! :heart_eyes:
+Segnala bug o richieste nella pagina [Issues][report_bug].
 
-## Authors & contributors
+## Licenza
 
-For a full list of all authors and contributors, check [the contributor's page][contributors].
+Vedi [LICENSE.md](LICENSE.md).
 
-## License
+## Supporto
 
-See separate [license file](LICENSE.md) for full text.
+Se il progetto ti e' utile puoi offrire una birra via PayPal:
 
-***
+[![Donate](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?business=GTYL35E47Y2AN&amount=5&currency_code=EUR)
 
-[component]: https://github.com/den901/ha-came
-[commits-shield]: https://img.shields.io/github/commit-activity/y/den901/ha-came.svg?style=popout
-[commits]: https://github.com/den901/ha-came/commits/master
+[component]: https://github.com/Den901/ha_came
+[commits-shield]: https://img.shields.io/github/commit-activity/y/Den901/ha_came.svg?style=popout
+[commits]: https://github.com/Den901/ha_came/commits/main
 [hacs-shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=popout
 [hacs]: https://hacs.xyz
-[exampleimg]: example.png
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=popout
 [forum]: https://community.home-assistant.io/
-[license]: https://github.com/den901/ha-came/blob/main/LICENSE.md
-[license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA_License-lightgray.svg?style=popout
-[releases-shield]: https://img.shields.io/github/release/lrzdeveloper/ha-came.svg?style=popout
-[releases]: https://github.com/den901/ha-came/releases
-[releases-latest]: https://github.com/den901/ha-came/releases/latest
-[report_bug]: https://github.com/den901/ha-came/issues/new?template=bug_report.md
-[suggest_idea]: https://github.com/den901/ha-came/issues/new?template=feature_request.md
-[contributors]: https://github.com/den901/ha-came/graphs/contributors
-
-
-## Support Me
-
-If you appreciate my work and want to buy me a beer, you can donate via PayPal:
-
-
-
-[![Buy me a beer](https://www.paypalobjects.com/en_US/IT/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/donate?business=GTYL35E47Y2AN&amount=5&currency_code=EUR)
-
-Buy me a beer...🍺🍺🍺🍺🍺🍺
+[license]: https://github.com/Den901/ha_came/blob/main/LICENSE.md
+[license-shield]: https://img.shields.io/badge/license-Creative_Commons_BY--NC--SA-lightgray.svg?style=popout
+[releases-shield]: https://img.shields.io/github/release/Den901/ha_came.svg?style=popout
+[releases]: https://github.com/Den901/ha_came/releases
+[releases-latest]: https://github.com/Den901/ha_came/releases/latest
+[report_bug]: https://github.com/Den901/ha_came/issues
